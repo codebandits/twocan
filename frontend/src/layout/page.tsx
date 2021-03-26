@@ -8,7 +8,8 @@ import MenuIcon from '@material-ui/icons/Menu'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
 import {createStyles, makeStyles, Theme, useTheme} from '@material-ui/core/styles'
-import {DrawerMenu} from "./drawer-menu"
+import {DrawerMenu} from './drawer-menu'
+import {SessionMenu} from '../identity/session-menu'
 
 const drawerWidth = 240
 
@@ -34,6 +35,9 @@ const useStyles = makeStyles((theme: Theme) =>
             [theme.breakpoints.up('md')]: {
                 display: 'none',
             },
+        },
+        grow: {
+            flexGrow: 1,
         },
         toolbarOffset: theme.mixins.toolbar,
         drawerPaper: {
@@ -73,6 +77,8 @@ export const Page = ({title, children}: Props) => {
                         <MenuIcon/>
                     </IconButton>
                     <Typography variant="h6" noWrap>{title}</Typography>
+                    <div className={classes.grow}/>
+                    <SessionMenu/>
                 </Toolbar>
             </AppBar>
             <nav className={classes.drawer}>
