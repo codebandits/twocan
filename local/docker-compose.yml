@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:9.6-alpine
+    container_name: twocan-postgres
+    restart: always
+    ports:
+      - 8040:5432
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
