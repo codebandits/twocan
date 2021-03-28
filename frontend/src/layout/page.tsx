@@ -7,10 +7,8 @@ import IconButton from '@material-ui/core/IconButton'
 import MenuIcon from '@material-ui/icons/Menu'
 import Toolbar from '@material-ui/core/Toolbar'
 import Typography from '@material-ui/core/Typography'
-import {createStyles, makeStyles, Theme, useTheme} from '@material-ui/core/styles'
+import {createStyles, makeStyles, Theme} from '@material-ui/core/styles'
 import {DrawerMenu} from './drawer-menu'
-import {SessionMenu} from '../identity/session-menu'
-import {useSession} from "../identity/session"
 
 const drawerWidth = 240
 
@@ -26,19 +24,13 @@ const useStyles = makeStyles((theme: Theme) =>
             },
         },
         appBar: {
-            [theme.breakpoints.up('md')]: {
-                width: `calc(100% - ${drawerWidth}px)`,
-                marginLeft: drawerWidth,
-            },
+            zIndex: theme.zIndex.drawer + 1,
         },
         menuButton: {
             marginRight: theme.spacing(2),
             [theme.breakpoints.up('md')]: {
                 display: 'none',
             },
-        },
-        grow: {
-            flexGrow: 1,
         },
         toolbarOffset: theme.mixins.toolbar,
         drawerPaper: {
@@ -57,10 +49,7 @@ interface Props {
 
 export const Page = ({title, children}: Props) => {
     const classes = useStyles()
-    const theme = useTheme()
     const [mobileOpen, setMobileOpen] = useState(false)
-    const {data: session} = useSession()
-    const loggedIn = Boolean(session)
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen)
@@ -71,46 +60,38 @@ export const Page = ({title, children}: Props) => {
             <CssBaseline/>
             <AppBar position="fixed" className={classes.appBar}>
                 <Toolbar>
-                    {loggedIn && (
-                        <IconButton
-                            color="inherit"
-                            aria-label="open drawer"
-                            edge="start"
-                            onClick={handleDrawerToggle}
-                            className={classes.menuButton}>
-                            <MenuIcon/>
-                        </IconButton>
-                    )}
+                    <IconButton
+                        color="inherit"
+                        aria-label="open drawer"
+                        edge="start"
+                        onClick={handleDrawerToggle}
+                        className={classes.menuButton}>
+                        <MenuIcon/>
+                    </IconButton>
                     <Typography variant="h6" noWrap>{title}</Typography>
-                    <div className={classes.grow}/>
-                    <SessionMenu/>
                 </Toolbar>
             </AppBar>
-            {loggedIn && (
-                <nav className={classes.drawer}>
-                    <Hidden mdUp>
-                        <Drawer
-                            variant="temporary"
-                            anchor={theme.direction === 'rtl' ? 'right' : 'left'}
-                            open={mobileOpen}
-                            onClose={handleDrawerToggle}
-                            classes={{paper: classes.drawerPaper}}
-                            ModalProps={{keepMounted: true}}>
-                            <div className={classes.toolbarOffset}/>
-                            <DrawerMenu/>
-                        </Drawer>
-                    </Hidden>
-                    <Hidden smDown>
-                        <Drawer
-                            classes={{paper: classes.drawerPaper}}
-                            variant="permanent"
-                            open>
-                            <div className={classes.toolbarOffset}/>
-                            <DrawerMenu/>
-                        </Drawer>
-                    </Hidden>
-                </nav>
-            )}
+            <nav className={classes.drawer}>
+                <Hidden mdUp>
+                    <Drawer
+                        variant="temporary"
+                        open={mobileOpen}
+                        onClose={handleDrawerToggle}
+                        classes={{paper: classes.drawerPaper}}
+                        ModalProps={{keepMounted: true}}>
+                        <DrawerMenu/>
+                    </Drawer>
+                </Hidden>
+                <Hidden smDown>
+                    <Drawer
+                        classes={{paper: classes.drawerPaper}}
+                        variant="permanent"
+                        open>
+                        <div className={classes.toolbarOffset}/>
+                        <DrawerMenu/>
+                    </Drawer>
+                </Hidden>
+            </nav>
             <main className={classes.content}>
                 <div className={classes.toolbarOffset}/>
                 {children}

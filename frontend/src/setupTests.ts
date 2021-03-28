@@ -6,6 +6,7 @@ import '@testing-library/jest-dom'
 import {testServer} from './test/test-server'
 import {suppressJsdomHttpErrors} from './test/test-suppress-errors'
 import {setLogger} from 'react-query'
+import mediaQuery from 'css-mediaquery'
 
 suppressJsdomHttpErrors()
 
@@ -13,6 +14,18 @@ setLogger({
     log: () => undefined,
     warn: () => undefined,
     error: () => undefined,
+})
+
+beforeAll(() => {
+    Object.defineProperty(window, 'matchMedia', {
+        value: (query: string) => ({
+            matches: mediaQuery.match(query, {width: window.innerWidth}),
+            addListener: () => {
+            },
+            removeListener: () => {
+            },
+        }),
+    })
 })
 
 beforeEach(async () => {

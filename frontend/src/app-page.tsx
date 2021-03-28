@@ -5,7 +5,7 @@ import {PageContent} from './layout/page-content'
 import {Logo} from './logo'
 import {Box} from '@material-ui/core'
 
-export const SamplePage = () => (
+export const AppPage = () => (
     <Page title="Twocan">
         <PageContent>
             <Box textAlign="center"><Logo/></Box>
