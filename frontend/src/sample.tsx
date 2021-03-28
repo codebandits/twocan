@@ -1,13 +1,14 @@
-import React from "react"
-import Typography from "@material-ui/core/Typography"
-import {Page} from "./layout/page"
-import {PageContent} from "./layout/page-content";
-import {Logo} from "./logo"
+import React from 'react'
+import Typography from '@material-ui/core/Typography'
+import {Page} from './layout/page'
+import {PageContent} from './layout/page-content'
+import {Logo} from './logo'
+import {Box} from '@material-ui/core'
 
 export const SamplePage = () => (
     <Page title="Twocan">
         <PageContent>
-            <Logo/>
+            <Box textAlign="center"><Logo/></Box>
             <Typography paragraph>
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt
                 ut labore et dolore magna aliqua. Rhoncus dolor purus non enim praesent elementum

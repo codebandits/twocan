@@ -10,6 +10,7 @@ import Typography from '@material-ui/core/Typography'
 import {createStyles, makeStyles, Theme, useTheme} from '@material-ui/core/styles'
 import {DrawerMenu} from './drawer-menu'
 import {SessionMenu} from '../identity/session-menu'
+import {useSession} from "../identity/session"
 
 const drawerWidth = 240
 
@@ -58,6 +59,8 @@ export const Page = ({title, children}: Props) => {
     const classes = useStyles()
     const theme = useTheme()
     const [mobileOpen, setMobileOpen] = useState(false)
+    const {data: session} = useSession()
+    const loggedIn = Boolean(session)
 
     const handleDrawerToggle = () => {
         setMobileOpen(!mobileOpen)
@@ -68,42 +71,46 @@ export const Page = ({title, children}: Props) => {
             <CssBaseline/>
             <AppBar position="fixed" className={classes.appBar}>
                 <Toolbar>
-                    <IconButton
-                        color="inherit"
-                        aria-label="open drawer"
-                        edge="start"
-                        onClick={handleDrawerToggle}
-                        className={classes.menuButton}>
-                        <MenuIcon/>
-                    </IconButton>
+                    {loggedIn && (
+                        <IconButton
+                            color="inherit"
+                            aria-label="open drawer"
+                            edge="start"
+                            onClick={handleDrawerToggle}
+                            className={classes.menuButton}>
+                            <MenuIcon/>
+                        </IconButton>
+                    )}
                     <Typography variant="h6" noWrap>{title}</Typography>
                     <div className={classes.grow}/>
                     <SessionMenu/>
                 </Toolbar>
             </AppBar>
-            <nav className={classes.drawer}>
-                <Hidden mdUp>
-                    <Drawer
-                        variant="temporary"
-                        anchor={theme.direction === 'rtl' ? 'right' : 'left'}
-                        open={mobileOpen}
-                        onClose={handleDrawerToggle}
-                        classes={{paper: classes.drawerPaper}}
-                        ModalProps={{keepMounted: true}}>
-                        <div className={classes.toolbarOffset}/>
-                        <DrawerMenu/>
-                    </Drawer>
-                </Hidden>
-                <Hidden smDown>
-                    <Drawer
-                        classes={{paper: classes.drawerPaper}}
-                        variant="permanent"
-                        open>
-                        <div className={classes.toolbarOffset}/>
-                        <DrawerMenu/>
-                    </Drawer>
-                </Hidden>
-            </nav>
+            {loggedIn && (
+                <nav className={classes.drawer}>
+                    <Hidden mdUp>
+                        <Drawer
+                            variant="temporary"
+                            anchor={theme.direction === 'rtl' ? 'right' : 'left'}
+                            open={mobileOpen}
+                            onClose={handleDrawerToggle}
+                            classes={{paper: classes.drawerPaper}}
+                            ModalProps={{keepMounted: true}}>
+                            <div className={classes.toolbarOffset}/>
+                            <DrawerMenu/>
+                        </Drawer>
+                    </Hidden>
+                    <Hidden smDown>
+                        <Drawer
+                            classes={{paper: classes.drawerPaper}}
+                            variant="permanent"
+                            open>
+                            <div className={classes.toolbarOffset}/>
+                            <DrawerMenu/>
+                        </Drawer>
+                    </Hidden>
+                </nav>
+            )}
             <main className={classes.content}>
                 <div className={classes.toolbarOffset}/>
                 {children}

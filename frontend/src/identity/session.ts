@@ -1,13 +1,11 @@
-import useSWR from 'swr'
+import {useQuery} from 'react-query'
 
 export type Session = {
     userId: string
     name: string
 }
 
-export const useSession = () => {
-    return useSWR<Session | null>('/api/session', fetcher)
-}
+export const useSession = () => useQuery('session', () => fetcher<Session | null>('/api/session'))
 
 const fetcher = async <T>(url: string): Promise<T> => {
     const response = await fetch(url)

@@ -1,3 +1,6 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
+
 buildscript {
     repositories {
         jcenter()
@@ -17,5 +20,16 @@ subprojects {
 
     tasks.withType<Jar> {
         archiveBaseName.set("${project.group}.${project.name}")
+    }
+
+    tasks.withType<Test> {
+        useJUnitPlatform {
+            includeEngines("spek2")
+        }
+
+        testLogging {
+            events(TestLogEvent.PASSED, TestLogEvent.SKIPPED, TestLogEvent.FAILED)
+            exceptionFormat = TestExceptionFormat.FULL
+        }
     }
 }

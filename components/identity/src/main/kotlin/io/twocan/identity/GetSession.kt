@@ -2,7 +2,6 @@ package io.twocan.identity
 
 
 import io.twocan.http.ApiResponse
-import io.twocan.http.toApiResponse
 import mu.KotlinLogging
 import org.http4k.core.Body
 import org.http4k.core.Method
@@ -11,17 +10,23 @@ import org.http4k.core.Status
 import org.http4k.format.KotlinxSerialization.auto
 import org.http4k.routing.RoutingHttpHandler
 import org.http4k.routing.bind
-import java.util.*
 
-private val logger = KotlinLogging.logger {}
-
-class GetSession {
-    private val responseLens = Body.auto<ApiResponse<Session>>().toLens()
-    operator fun invoke(): RoutingHttpHandler {
+internal object GetSession {
+    private val logger = KotlinLogging.logger {}
+    private val responseLens = Body.auto<ApiResponse<Session?>>().toLens()
+    operator fun invoke(sessionLens: SessionLens): RoutingHttpHandler {
         return "/api/session" bind Method.GET to { request ->
-            val session = Session(userId = UUID.randomUUID(), name = "Twocan Sam")
-            logger.info { "found session for user id ${session.userId}" }
-            responseLens.inject(session.toApiResponse(), Response(Status.OK))
+            when (val session = sessionLens(request)) {
+                null -> {
+                    logger.trace { "user has no session" }
+                    responseLens.inject(ApiResponse(null), Response(Status.OK))
+                }
+                else -> {
+                    logger.trace { "found session for user id ${session.id}" }
+                    responseLens.inject(ApiResponse(session), Response(Status.OK))
+                }
+            }
         }
     }
 }
+
