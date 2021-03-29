@@ -20,8 +20,12 @@ internal object Login {
         return "/api/login" bind Method.POST to { request ->
             val requestBody = requestBodyLens(request)
             val sessionId = UUID.randomUUID()
-            sessions[sessionId] = requestBody.emailAddress
-            logger.info { "Login successful - \"${requestBody.emailAddress}\"" }
+            val user = when (val existingUser = userByUserIdRepository.values.find { user -> user.emailAddress == requestBody.emailAddress }) {
+                null -> User(id = UUID.randomUUID(), emailAddress = requestBody.emailAddress).also { userByUserIdRepository[it.id] = it }
+                else -> existingUser
+            }
+            userIdBySessionIdRepository[sessionId] = user.id
+            logger.info { "Login successful - \"${user.emailAddress}\"" }
             Response(Status.OK).cookie(Cookie(name = "session", value = sessionId.toString()))
         }
     }

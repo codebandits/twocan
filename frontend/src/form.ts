@@ -1,4 +1,4 @@
-import {FormEventHandler, useCallback, useEffect, useMemo, useState} from 'react'
+import {FormEventHandler, useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {StandardTextFieldProps} from '@material-ui/core/TextField/TextField'
 import {ButtonProps} from '@material-ui/core'
 import {makeCancelable} from './promise'
@@ -12,6 +12,7 @@ type ValuesType = {
 type Config<Values extends ValuesType, Result> = {
     initialValues: Values
     submit: (values: Values) => Promise<Result>
+    onSuccessCallback?: () => void
 }
 
 type Field<ValueType> = {
@@ -34,7 +35,10 @@ type FormData<Values extends ValuesType> = {
     onSubmit: FormEventHandler<HTMLFormElement>
 }
 
-export const useFormData = <Values extends ValuesType, Result>({submit, initialValues}: Config<Values, Result>): FormData<Values> => {
+export const useFormData = <Values extends ValuesType, Result>(config: Config<Values, Result>): FormData<Values> => {
+    const {submit, initialValues, onSuccessCallback} = config
+    useLogErrorWhenUpdate(submit, 'The submit configuration of useFormData changed. This is a bug.')
+    useLogErrorWhenUpdate(initialValues, 'The initialValues configuration of useFormData changed. This is a bug.')
     const [values, setValues] = useState<Values>(initialValues)
     const [submitting, setSubmitting] = useState(false)
 
@@ -47,14 +51,18 @@ export const useFormData = <Values extends ValuesType, Result>({submit, initialV
         if (submitting) {
             const cancelable = makeCancelable(submit(values))
             cancelable.promise
-                .then(() => setSubmitting(false))
+                .then(() => {
+                    setSubmitting(false)
+                    setValues(initialValues)
+                    onSuccessCallback?.()
+                })
                 .catch(() => setSubmitting(false))
             return () => {
                 cancelable.cancel()
                 setSubmitting(false)
             }
         }
-    }, [submit, submitting, values])
+    }, [initialValues, onSuccessCallback, submit, submitting, values])
 
     const fields: Fields<Values> = useMemo(() => {
         return Object.entries(values)
@@ -87,4 +95,19 @@ export const useFormData = <Values extends ValuesType, Result>({submit, initialV
         onSubmit: onSubmit,
         submitButtonProps: submitButtonProps,
     }
+}
+
+const useLogErrorWhenUpdate = (value: any, message: string) => {
+    const messageRef = useRef(message)
+    const valueRef = useRef(value)
+    useEffect(() => {
+        if (process.env.NODE_ENV !== 'production') {
+            if (valueRef.current !== value) {
+                console.error(messageRef.current)
+            }
+        }
+    }, [value])
+    useEffect(() => {
+        valueRef.current = value
+    })
 }

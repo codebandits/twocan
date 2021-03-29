@@ -32,4 +32,8 @@ subprojects {
             exceptionFormat = TestExceptionFormat.FULL
         }
     }
+
+    configurations.all {
+        resolutionStrategy.force("org.slf4j:slf4j-api:${Versions.Sl4fj}")
+    }
 }

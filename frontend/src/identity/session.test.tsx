@@ -36,8 +36,12 @@ describe('session', () => {
     describe('when the user is logged in', () => {
 
         const session: Session = {
-            userId: 'user-1',
-            name: 'Toucan Sam',
+            id: 'session-1',
+            user: {
+                id: 'user-1',
+                firstName: 'Toucan',
+                lastName: 'Sam',
+            }
         }
 
         beforeEach(async () => {

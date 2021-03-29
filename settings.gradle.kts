@@ -1,7 +1,12 @@
 rootProject.name = "twocan"
 
+include(":components:birds")
+include(":components:birds:core")
 include(":components:identity")
+include(":components:identity:client")
 include(":components:identity:core")
+include(":libs:http-client-support")
+include(":libs:http-server-support")
 include(":libs:http-support")
 include(":libs:http-test-support")
 include(":libs:logging-support")

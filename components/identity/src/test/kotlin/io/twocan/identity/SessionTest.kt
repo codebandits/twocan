@@ -27,12 +27,6 @@ object SessionTest : Spek({
         val loginRequestBodyLens = Body.auto<Login.RequestBody>().toLens()
         val subject = IdentityRoutes()
 
-        describe("when a user with a valid session cookie requests their session") {
-            beforeEachTest {
-                Request(Method.GET, "/api/login")
-            }
-        }
-
         describe("when a user authenticates") {
             val emailAddress = "bird@example.com"
             val request = loginRequestBodyLens(
@@ -47,6 +41,30 @@ object SessionTest : Spek({
 
             it("should set the session cookie") {
                 assertThat(response, hasSetCookie("session", hasCookieValue(anything)))
+            }
+        }
+
+        describe("when a user authenticates multiple times") {
+            val emailAddress = "bird@example.com"
+            val request = loginRequestBodyLens(
+                    Login.RequestBody(emailAddress = emailAddress),
+                    Request(Method.POST, "/api/login"),
+            )
+            val loginResponse1 = subject(request)
+            val sessionCookie1 = loginResponse1.cookies().single { it.name == "session" }.value
+            val loginResponse2 = subject(request)
+            val sessionCookie2 = loginResponse2.cookies().single { it.name == "session" }.value
+
+            it("should return unique session cookies") {
+                assertThat(sessionCookie1, !equalTo(sessionCookie2))
+            }
+
+            it("should return the same user for each session") {
+                val sessionResponse1 = subject(Request(Method.GET, "/api/session").cookie("session", sessionCookie1))
+                val session1 = sessionApiResponseLens(sessionResponse1).data!!
+                val sessionResponse2 = subject(Request(Method.GET, "/api/session").cookie("session", sessionCookie2))
+                val session2 = sessionApiResponseLens(sessionResponse2).data!!
+                assertThat(session1.user, equalTo(session2.user))
             }
         }
 
@@ -101,8 +119,7 @@ object SessionTest : Spek({
             }
 
             it("should return a session with the user's email address") {
-                val expectedApiResponse = ApiResponse(Session(id = UUID.fromString(sessionCookie.value), emailAddress = emailAddress))
-                assertThat(sessionResponse, hasBody(sessionApiResponseLens, equalTo(expectedApiResponse)))
+                assertThat(sessionApiResponseLens(sessionResponse).data!!.user.emailAddress, equalTo(emailAddress))
             }
 
             it("should not set the session cookie") {
@@ -120,7 +137,6 @@ object SessionTest : Spek({
             val sessionCookie = loginResponse.cookies().single { it.name == "session" }
             val logoutRequest = Request(Method.POST, "/api/logout").cookie(sessionCookie)
             val logoutResponse = subject(logoutRequest)
-
 
             it("should return status OK") {
                 assertThat(logoutResponse, hasStatus(Status.OK))

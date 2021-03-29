@@ -1,10 +1,11 @@
-import {Box, Button, Card, CardContent, TextField, Typography} from '@material-ui/core'
+import {Box, Button, Card, CardContent, Container, TextField, Typography} from '@material-ui/core'
 import {Page} from '../layout/page'
-import {PageContent} from '../layout/page-content'
 import React, {useCallback} from 'react'
 import {useFormData} from '../form'
 import {useQueryClient} from 'react-query'
 import {Logo} from "../logo";
+
+const initialValues = {emailAddress: ''}
 
 export const LoginPage = () => {
 
@@ -15,14 +16,14 @@ export const LoginPage = () => {
             body: JSON.stringify(data)
         }).then(() => queryClient.invalidateQueries('session')), [queryClient])
     const formData = useFormData({
-        initialValues: {emailAddress: ''},
+        initialValues: initialValues,
         submit: login,
     })
 
     return (
         <Page title="Twocan">
-            <PageContent>
-                <Box display="flex" justifyContent="center">
+            <Container>
+                <Box display="flex" justifyContent="center" mt={2}>
                     <Card>
                         <CardContent>
                             <Typography variant="h4" align="center">Login</Typography>
@@ -45,7 +46,7 @@ export const LoginPage = () => {
                         </CardContent>
                     </Card>
                 </Box>
-            </PageContent>
+            </Container>
         </Page>
     )
 }

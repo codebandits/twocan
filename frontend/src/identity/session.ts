@@ -1,14 +1,10 @@
 import {useQuery} from 'react-query'
+import {fetcher} from '../fetcher'
+import {User} from './user'
 
 export type Session = {
-    userId: string
-    name: string
+    id: string
+    user: User
 }
 
 export const useSession = () => useQuery('session', () => fetcher<Session | null>('/api/session'))
-
-const fetcher = async <T>(url: string): Promise<T> => {
-    const response = await fetch(url)
-    const json = await response.json()
-    return json.data
-}

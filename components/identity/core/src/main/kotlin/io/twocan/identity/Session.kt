@@ -8,5 +8,5 @@ import java.util.*
 data class Session(
         @Serializable(with = UUIDSerializer::class)
         val id: UUID,
-        val emailAddress: String,
+        val user: User,
 )

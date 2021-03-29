@@ -17,8 +17,8 @@ internal object Logout {
                     Response(Status.OK)
                 }
                 else -> {
-                    sessions.remove(session.id)
-                    logger.info { "Logout successful - \"${session.emailAddress}\"" }
+                    userIdBySessionIdRepository.remove(session.id)
+                    logger.info { "Logout successful - \"${session.user.emailAddress}\"" }
                     Response(Status.OK).invalidateCookie("session")
                 }
             }

@@ -5,11 +5,11 @@ plugins {
 }
 
 dependencies {
-    implementation(platform("org.http4k:http4k-bom:${Versions.Http4k}"))
-    implementation("org.http4k:http4k-core")
-    implementation("org.http4k:http4k-server-jetty")
-    implementation("org.http4k:http4k-cloudnative")
+    implementation(project(":components:birds"))
     implementation(project(":components:identity"))
+
+    implementation(project(":libs:http-support"))
+    implementation(project(":libs:http-server-support"))
 
     runtimeOnly(project(":libs:logging-runtime-support"))
 }
@@ -36,6 +36,7 @@ tasks {
         doFirst {
             setEnvironment(
                     mapOf(
+                            "IDENTITY_URI" to "http://localhost:8080/",
                             "SERVICE_PORT" to "8080",
                             "HEALTH_PORT" to "8181"
                     )

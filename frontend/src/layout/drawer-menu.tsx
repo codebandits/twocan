@@ -1,18 +1,19 @@
-import Divider from "@material-ui/core/Divider";
-import List from "@material-ui/core/List";
-import ListItem from "@material-ui/core/ListItem";
-import ListItemIcon from "@material-ui/core/ListItemIcon";
-import InboxIcon from "@material-ui/icons/MoveToInbox";
-import MailIcon from "@material-ui/icons/Mail";
-import ListItemText from "@material-ui/core/ListItemText";
-import React from "react";
-import {useSession} from "../identity/session";
-import {Link} from "react-router-dom";
-import {Home} from "@material-ui/icons";
-import {SvgIcon} from "@material-ui/core";
+import Divider from '@material-ui/core/Divider'
+import List from '@material-ui/core/List'
+import ListItem from '@material-ui/core/ListItem'
+import ListItemIcon from '@material-ui/core/ListItemIcon'
+import ListItemText from '@material-ui/core/ListItemText'
+import React from 'react'
+import {useSession} from '../identity/session'
+import {Link} from 'react-router-dom'
+import {Home} from '@material-ui/icons'
+import {Box, SvgIcon} from '@material-ui/core'
 import {ReactComponent as LoginIcon} from './login.svg'
 import {ReactComponent as LogoutIcon} from './logout.svg'
 import {useLogout} from '../identity/logout'
+import {ReactComponent as BirdIcon} from '../birds/bird.svg'
+import {ReactComponent as FlockIcon} from '../birds/flock.svg'
+import {ReactComponent as FlightIcon} from '../birds/flight.svg'
 
 export const DrawerMenu = () => {
     const {data: session} = useSession()
@@ -23,21 +24,26 @@ export const DrawerMenu = () => {
             {loggedIn && (
                 <>
                     <List>
-                        {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
-                            <ListItem button key={text}>
-                                <ListItemIcon>{index % 2 === 0 ? <InboxIcon/> : <MailIcon/>}</ListItemIcon>
-                                <ListItemText primary={text}/>
-                            </ListItem>
-                        ))}
-                    </List>
-                    <Divider/>
-                    <List>
-                        {['All mail', 'Trash', 'Spam'].map((text, index) => (
-                            <ListItem button key={text}>
-                                <ListItemIcon>{index % 2 === 0 ? <InboxIcon/> : <MailIcon/>}</ListItemIcon>
-                                <ListItemText primary={text}/>
-                            </ListItem>
-                        ))}
+                        <ListItem button component={Link} to="/birds">
+                            <ListItemIcon>
+                                <SvgIcon><BirdIcon/></SvgIcon>
+                            </ListItemIcon>
+                            <ListItemText primary="Birds"/>
+                        </ListItem>
+                       <Box display="none">
+                           <ListItem button component={Link} to="/flocks">
+                               <ListItemIcon>
+                                   <SvgIcon><FlockIcon/></SvgIcon>
+                               </ListItemIcon>
+                               <ListItemText primary="Flocks"/>
+                           </ListItem>
+                           <ListItem button component={Link} to="/flights">
+                               <ListItemIcon>
+                                   <SvgIcon><FlightIcon/></SvgIcon>
+                               </ListItemIcon>
+                               <ListItemText primary="Flights"/>
+                           </ListItem>
+                       </Box>
                     </List>
                     <Divider/>
                     <List>
@@ -64,5 +70,5 @@ export const DrawerMenu = () => {
                 </>
             )}
         </div>
-    );
+    )
 }

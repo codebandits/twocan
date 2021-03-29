@@ -1,14 +1,13 @@
 import React from 'react'
 import Typography from '@material-ui/core/Typography'
 import {Page} from './layout/page'
-import {PageContent} from './layout/page-content'
 import {Logo} from './logo'
-import {Box, Button, Card, CardContent, CardMedia, Grid} from '@material-ui/core'
+import {Box, Button, Card, CardContent, CardMedia, Container, Grid} from '@material-ui/core'
 import {Link} from 'react-router-dom'
 
 export const HomePage = () => (
     <Page title="Twocan">
-        <PageContent>
+        <Container maxWidth={false}>
             <Box textAlign="center" mb={4}>
                 <Logo/>
                 <Typography variant="h4" align="center" paragraph>
@@ -57,6 +56,6 @@ export const HomePage = () => (
                     </Card>
                 </Grid>
             </Grid>
-        </PageContent>
+        </Container>
     </Page>
 )

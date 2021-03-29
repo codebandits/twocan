@@ -1,5 +1,10 @@
 import React from "react";
-import {createMuiTheme, CssBaseline, MuiThemeProvider, useMediaQuery} from "@material-ui/core";
+import {
+    CssBaseline,
+    MuiThemeProvider,
+    unstable_createMuiStrictModeTheme as createMuiTheme,
+    useMediaQuery
+} from "@material-ui/core";
 import {indigo, lightBlue, lightGreen, orange, red, yellow} from "@material-ui/core/colors";
 
 type Props = {
