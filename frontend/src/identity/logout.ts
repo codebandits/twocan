@@ -9,7 +9,7 @@ export const useLogout = () => {
         if (submitting) {
             const cancelable = makeCancelable(fetch('/api/logout', {method: 'post'}))
             cancelable.promise
-                .then(() => queryClient.invalidateQueries('session'))
+                .then(() => queryClient.resetQueries())
                 .then(() => setSubmitting(false))
                 .catch(() => setSubmitting(false))
             return () => {
