@@ -27,7 +27,7 @@ internal object CreateBird {
             )
             val session = sessionLens(request)
             if (session != null) {
-                val userId = session.id
+                val userId = session.user.id
                 val userBirds = birdsByUserIdRepository.getOrDefault(userId, emptyMap()).plus(bird.id to bird)
                 birdsByUserIdRepository[userId] = userBirds
             }

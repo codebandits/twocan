@@ -22,7 +22,7 @@ internal object GetSession {
                     responseLens.inject(ApiResponse(null), Response(Status.OK))
                 }
                 else -> {
-                    logger.trace { "found session for user id ${session.id}" }
+                    logger.trace { "found session for user id ${session.user.id}" }
                     responseLens.inject(ApiResponse(session), Response(Status.OK))
                 }
             }

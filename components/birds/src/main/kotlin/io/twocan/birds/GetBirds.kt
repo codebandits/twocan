@@ -16,7 +16,7 @@ internal object GetBirds {
         return "/api/birds" bind Method.GET to { request ->
             val birds = when (val session = sessionLens(request)) {
                 null -> emptyList()
-                else -> birdsByUserIdRepository.getOrDefault(session.id, emptyMap()).values.toList()
+                else -> birdsByUserIdRepository.getOrDefault(session.user.id, emptyMap()).values.toList()
             }
             responseLens.inject(ApiResponse(birds), Response(Status.OK))
         }

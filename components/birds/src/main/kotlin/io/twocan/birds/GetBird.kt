@@ -19,7 +19,7 @@ internal object GetBird {
         return "/api/birds/{birdId}" bind Method.GET to { request ->
             val session = sessionLens(request)
             val bird = if (session != null) {
-                val userId = session.id
+                val userId = session.user.id
                 val birdId = birdIdLens(request)
                 birdsByUserIdRepository.getOrDefault(userId, emptyMap())[birdId]
             } else {
