@@ -31,6 +31,7 @@ export const LoginPage = () => {
                             <form onSubmit={formData.onSubmit}>
                                 <TextField
                                     {...formData.fields.emailAddress.textFieldProps}
+                                    autoFocus
                                     id="login-email-address-input"
                                     label="Email Address"
                                     fullWidth/>
