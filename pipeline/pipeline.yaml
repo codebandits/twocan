@@ -1,0 +1,61 @@
+var_sources:
+  - name: vars
+    type: dummy
+    config:
+      vars:
+        alpine-version: "3.13.4"
+        kaniko-version: "v1.5.2-slim"
+
+resources:
+  - name: source
+    type: git
+    source:
+      branch: main
+      private_key: ((pipeline.git-private-key))
+      uri: ((pipeline.git-repository))
+      git_crypt_key: ((pipeline.git-crypt-key))
+    check_every: 24h
+    webhook_token: ((pipeline.git-webhook-token))
+  - name: alpine-image
+    type: registry-image
+    source:
+      repository: alpine
+      tag: ((vars:alpine-version))
+  - name: kaniko-executor-image
+    type: registry-image
+    source:
+      repository: gcr.io/kaniko-project/executor
+      tag: ((vars:kaniko-version))
+  - name: k8s-gcp-image
+    type: registry-image
+    source:
+      repository: us.gcr.io:443/tools-275701/twocan/pipeline/k8s-gcp
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account))
+
+jobs:
+  - name: build-k8s-gcp
+    serial: true
+    plan:
+      - in_parallel:
+          - get: source
+          - get: alpine-image
+          - get: kaniko-executor-image
+      - task: prepare-k8s-gcp-image
+        image: alpine-image
+        file: source/pipeline/tasks/copy.yaml
+        params:
+          path: source/pipeline/images/k8s-gcp/.
+        output_mapping:
+          output: k8s-gcp-image-source
+      - task: build-k8s-gcp-image
+        image: kaniko-executor-image
+        file: source/pipeline/tasks/build-image.yaml
+        input_mapping:
+          context: k8s-gcp-image-source
+        output_mapping:
+          image: k8s-gcp-image
+      - put: k8s-gcp-image
+        params:
+          image: k8s-gcp-image/image.tar

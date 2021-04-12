@@ -1,0 +1,19 @@
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority: remus.ca.crt
+    server: https://35.224.213.64
+  name: remus
+contexts:
+- context:
+    cluster: remus
+    user: gcp
+  name: remus
+current-context: remus
+kind: Config
+preferences: {}
+users:
+- name: gcp
+  user:
+    auth-provider:
+      name: gcp

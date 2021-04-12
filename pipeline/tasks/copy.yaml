@@ -1,0 +1,18 @@
+---
+platform: linux
+
+params:
+  path: .
+
+inputs:
+- name: source
+
+outputs:
+- name: output
+
+run:
+  path: sh
+  args:
+  - -ecu
+  - |
+    cp -a $path output/

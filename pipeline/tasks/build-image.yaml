@@ -1,0 +1,17 @@
+---
+platform: linux
+
+inputs:
+  - name: context
+
+outputs:
+  - name: image
+
+run:
+  path: /kaniko/executor
+  args:
+    - --reproducible
+    - --context=context
+    - --no-push
+    - --destination=noop # https://git.io/JJDXu
+    - --tarPath=image/image.tar
