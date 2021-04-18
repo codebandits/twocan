@@ -3,8 +3,8 @@ var_sources:
     type: dummy
     config:
       vars:
-        alpine-version: "3.13.4"
-        kaniko-version: "v1.5.2-slim"
+        alpine-version: "3.13.5" # https://alpinelinux.org/downloads/
+        kaniko-version: "v1.5.2-slim" # https://git.io/JOEAf
 
 resources:
   - name: source
