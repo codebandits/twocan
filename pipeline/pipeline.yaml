@@ -3,6 +3,7 @@ var_sources:
     type: dummy
     config:
       vars:
+        node-version: "15-alpine" # https://hub.docker.com/_/node
         alpine-version: "3.13.5" # https://alpinelinux.org/downloads/
         kaniko-version: "v1.5.2-slim" # https://git.io/JOEAf
 
@@ -21,6 +22,11 @@ resources:
     source:
       repository: alpine
       tag: ((vars:alpine-version))
+  - name: node-image
+    type: registry-image
+    source:
+      repository: node
+      tag: ((vars:node-version))
   - name: kaniko-executor-image
     type: registry-image
     source:
@@ -30,6 +36,13 @@ resources:
     type: registry-image
     source:
       repository: us.gcr.io:443/tools-275701/twocan/pipeline/k8s-gcp
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
+  - name: frontend-image
+    type: registry-image
+    source:
+      repository: us.gcr.io:443/tools-275701/twocan/frontend
       tag: latest
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
@@ -59,3 +72,25 @@ jobs:
       - put: k8s-gcp-image
         params:
           image: k8s-gcp-image/image.tar
+  - name: build-twocan
+    serial: true
+    plan:
+      - in_parallel:
+          - get: source
+          - get: node-image
+          - get: kaniko-executor-image
+      - task: build-frontend
+        image: node-image
+        file: source/pipeline/tasks/build-frontend.yaml
+        output_mapping:
+          build: frontend-build
+      - task: build-frontend-image
+        image: kaniko-executor-image
+        file: source/pipeline/tasks/build-image.yaml
+        input_mapping:
+          context: frontend-build
+        output_mapping:
+          image: frontend-image
+      - put: frontend-image
+        params:
+          image: frontend-image/image.tar

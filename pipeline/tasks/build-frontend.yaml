@@ -1,0 +1,28 @@
+---
+platform: linux
+
+inputs:
+  - name: source
+
+outputs:
+  - name: build
+
+caches:
+  - path: source/frontend/node_modules
+
+run:
+  path: sh
+  args:
+    - -ecu
+    - |
+      workdir=$(pwd)
+      export CI=true
+
+      cd source/frontend
+      npm install
+      npm run build
+
+      cd $workdir
+      cp -a source/frontend/build build/build
+      cp -a source/frontend/Dockerfile build/
+      cp -a source/frontend/nginx.conf build/
