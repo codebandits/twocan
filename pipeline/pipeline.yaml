@@ -32,7 +32,7 @@ resources:
       repository: us.gcr.io:443/tools-275701/twocan/pipeline/k8s-gcp
       tag: latest
       username: _json_key
-      password: ((pipeline.gcp-service-account))
+      password: ((pipeline.gcp-service-account-registry))
 
 jobs:
   - name: build-k8s-gcp
