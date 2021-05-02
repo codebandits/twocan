@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+set -e
+
+work_dir="${0%/*}"
+. "$work_dir"/libs
+
+params=$(cat /dev/stdin)
+registry=$(extract_param "$params" .source.registry)
+repository=$(extract_param "$params" .source.repository)
+username=$(extract_param "$params" .source.username)
+password=$(extract_param "$params" .source.password)
+previous_version=$(extract_param "$params" .version.number)
+
+ensure_param_set registry
+ensure_param_set repository
+ensure_param_set username
+ensure_param_set password
+
+regctl registry login "$registry" -u "$username" -p "$password"
+versions=$(get_versions "${registry}/${repository}")
+
+if [ -z "$previous_version" ]; then
+  >&2 echo "The previous version was not provided. Returning the current version."
+  echo "$versions" | head -1 | lines_to_json
+elif echo "$versions" | grep -q "$previous_version"; then
+  >&2 echo "The previous version was found. Returning the versions since."
+  echo "$versions" | sed -n "/${previous_version}/!p;//q" | lines_to_json
+else
+  >&2 echo "The previous version was not found. Returning the current version."
+  echo "$versions" | head -1 | lines_to_json
+fi

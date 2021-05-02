@@ -1,0 +1,51 @@
+#!/usr/bin/env sh
+
+set -e
+
+work_dir="${0%/*}"
+. "$work_dir"/libs
+
+params=$(cat /dev/stdin)
+registry=$(extract_param "$params" .source.registry)
+repository=$(extract_param "$params" .source.repository)
+username=$(extract_param "$params" .source.username)
+password=$(extract_param "$params" .source.password)
+path=$(extract_param "$params" .params.path)
+
+ensure_param_set registry
+ensure_param_set repository
+ensure_param_set username
+ensure_param_set password
+ensure_param_set path
+
+export IMGPKG_REGISTRY_HOSTNAME="$registry"
+export IMGPKG_REGISTRY_USERNAME="$username"
+export IMGPKG_REGISTRY_PASSWORD="$password"
+export KBLD_REGISTRY_HOSTNAME="$registry"
+export KBLD_REGISTRY_USERNAME="$username"
+export KBLD_REGISTRY_PASSWORD="$password"
+regctl registry login "$registry" -u "$username" -p "$password"
+
+previous_version=$(get_versions "${registry}/${repository}" | head -1)
+next_version=$(if [ -z "$previous_version" ]; then echo 1; else xargs expr 1 + "$previous_version"; fi)
+previous_digest=$(if [ -z "$previous_version" ]; then echo; else regctl image digest "${registry}/${repository}:${previous_version}"; fi)
+
+cd "$1"
+
+>&2 imgpkg push -b "${registry}/${repository}" -f "$path"
+
+latest_digest=$(regctl image digest "${registry}/${repository}")
+latest_digest_ref="${registry}/${repository}@${latest_digest}"
+
+if [ -z "$previous_digest" ]; then
+  >&2 echo "The was no previous version found. Tagging as ${next_version}."
+  >&2 regctl image copy "$latest_digest_ref" "${registry}/${repository}:${next_version}"
+  format_version "$next_version" "$latest_digest"
+elif [ "$previous_digest" = "$latest_digest" ]; then
+  >&2 echo "The current version is the same as the previous version. Not tagging."
+  format_version "$previous_version" "$latest_digest"
+else
+  >&2 echo "The current version is new. Tagging as ${next_version}."
+  >&2 regctl image copy "$latest_digest_ref" "${registry}/${repository}:${next_version}"
+  format_version "$next_version" "$latest_digest"
+fi

@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+
+set -e
+
+work_dir="${0%/*}"
+. "$work_dir"/libs
+
+params=$(cat /dev/stdin)
+registry=$(extract_param "$params" .source.registry)
+repository=$(extract_param "$params" .source.repository)
+username=$(extract_param "$params" .source.username)
+password=$(extract_param "$params" .source.password)
+version=$(extract_param "$params" .version.number)
+
+ensure_param_set registry
+ensure_param_set repository
+ensure_param_set username
+ensure_param_set password
+ensure_param_set version
+
+regctl registry login "$registry" -u "$username" -p "$password"
+export IMGPKG_USERNAME="$username"
+export IMGPKG_PASSWORD="$password"
+
+digest=$(regctl image digest "${registry}/${repository}:${version}")
+
+download_dir="$(pwd)"/download
+mkdir "$download_dir"
+>&2 echo "running imgpkg pull -b ${registry}/${repository}:${version} -o $(pwd)/download"
+>&2 imgpkg pull -b "${registry}/${repository}:${version}" -o "$(pwd)/download"
+cp -a "$download_dir"/. "$1"
+
+format_version "$version" "$digest"
