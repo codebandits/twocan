@@ -15,7 +15,7 @@ dependencies {
 }
 
 application {
-    mainClassName = "io.twocan.ServerKt" // https://git.io/JT9Sg
+    mainClass.set("io.twocan.ServerKt")
 }
 
 tasks {
@@ -34,12 +34,10 @@ tasks {
 
     getByName<JavaExec>("run") {
         doFirst {
-            setEnvironment(
-                    mapOf(
-                            "IDENTITY_URI" to "http://localhost:8080/",
-                            "SERVICE_PORT" to "8080",
-                            "HEALTH_PORT" to "8181"
-                    )
+            environment = mapOf(
+                "IDENTITY_URI" to "http://localhost:8080/",
+                "SERVICE_PORT" to "8080",
+                "HEALTH_PORT" to "8181"
             )
         }
     }

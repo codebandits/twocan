@@ -3,19 +3,19 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 buildscript {
     repositories {
-        jcenter()
+        gradlePluginPortal()
     }
 
     dependencies {
         classpath(kotlin("gradle-plugin", version = Versions.Kotlin))
         classpath(kotlin("serialization", version = Versions.Kotlin))
-        classpath("com.github.jengelman.gradle.plugins:shadow:${Versions.Shadow}")
+        classpath("gradle.plugin.com.github.jengelman.gradle.plugins:shadow:${Versions.Shadow}")
     }
 }
 
 subprojects {
     repositories {
-        jcenter()
+        mavenCentral()
     }
 
     tasks.withType<Jar> {
