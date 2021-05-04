@@ -8,7 +8,7 @@ ENV KUBERNETES_VERSION=1.20.6 \
     # https://git.io/JOEp7
     KBLD_VERSION=0.29.0 \
     # https://git.io/JOEpN
-    IMGPKG_VERSION=0.6.1
+    IMGPKG_VERSION=0.7.0
     # https://git.io/JOaky
 
 RUN wget -q -P /bin https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl && chmod +x /bin/kubectl && \

@@ -2,7 +2,7 @@ FROM alpine:3.13.5
 
 ENV REGCLIENT_VERSION=0.3.2 \
     # https://git.io/J3BCQ
-    IMGPKG_VERSION=0.6.1
+    IMGPKG_VERSION=0.7.0
     # https://git.io/JOaky
 
 RUN apk add --no-cache jq libc6-compat && \
