@@ -1,0 +1,190 @@
+var_sources:
+  - name: vars
+    type: dummy
+    config:
+      vars:
+        node-version: "15-alpine" # https://hub.docker.com/_/node
+        alpine-version: "3.13.5" # https://alpinelinux.org/downloads/
+        kaniko-version: "v1.5.2-slim" # https://git.io/JOEAf
+
+resource_types:
+  - name: build
+    type: docker-image
+    source:
+      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/build-resource
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
+
+resources:
+  - name: source
+    type: git
+    source:
+      branch: main
+      private_key: ((pipeline.git-private-key))
+      uri: ((pipeline.git-repository))
+      git_crypt_key: ((pipeline.git-crypt-key))
+    check_every: 24h
+    webhook_token: ((pipeline.git-webhook-token))
+  - name: alpine-image
+    type: registry-image
+    source:
+      repository: alpine
+      tag: ((vars:alpine-version))
+  - name: node-image
+    type: registry-image
+    source:
+      repository: node
+      tag: ((vars:node-version))
+  - name: kaniko-executor-image
+    type: registry-image
+    source:
+      repository: gcr.io/kaniko-project/executor
+      tag: ((vars:kaniko-version))
+  - name: k8s-gcp-runner-image
+    type: registry-image
+    source:
+      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/k8s-gcp-runner
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
+  - name: build-resource-image
+    type: registry-image
+    source:
+      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/build-resource
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
+  - name: frontend-image
+    type: registry-image
+    source:
+      repository: us-central1-docker.pkg.dev/tools-275701/twocan/frontend
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
+  - name: twocan-build
+    type: build
+    source:
+      registry: us-central1-docker.pkg.dev
+      repository: tools-275701/twocan/build
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
+
+groups:
+  - name: main
+    jobs:
+      - build-twocan
+      - development
+  - name: pipeline
+    jobs:
+      - k8s-gcp-runner
+      - build-resource
+
+jobs:
+  - name: k8s-gcp-runner
+    serial: true
+    plan:
+      - in_parallel:
+          - get: source
+          - get: alpine-image
+          - get: kaniko-executor-image
+      - task: prepare-k8s-gcp-runner-image
+        image: alpine-image
+        file: source/pipeline/tasks/copy.yml
+        params:
+          path: source/pipeline/images/k8s-gcp-runner/.
+        output_mapping:
+          output: k8s-gcp-runner-image-source
+      - task: build-k8s-gcp-runner-image
+        image: kaniko-executor-image
+        file: source/pipeline/tasks/build-image.yml
+        input_mapping:
+          context: k8s-gcp-runner-image-source
+        output_mapping:
+          image: k8s-gcp-runner-image
+      - put: k8s-gcp-runner-image
+        params:
+          image: k8s-gcp-runner-image/image.tar
+  - name: build-resource
+    serial: true
+    plan:
+      - in_parallel:
+          - get: source
+          - get: alpine-image
+          - get: kaniko-executor-image
+      - task: prepare-build-resource-image
+        image: alpine-image
+        file: source/pipeline/tasks/copy.yml
+        params:
+          path: source/pipeline/images/build-resource/.
+        output_mapping:
+          output: build-resource-image-source
+      - task: build-build-resource-image
+        image: kaniko-executor-image
+        file: source/pipeline/tasks/build-image.yml
+        input_mapping:
+          context: build-resource-image-source
+        output_mapping:
+          image: build-resource-image
+      - put: build-resource-image
+        params:
+          image: build-resource-image/image.tar
+  - name: build-twocan
+    serial: true
+    plan:
+      - in_parallel:
+          - get: source
+          - get: node-image
+          - get: kaniko-executor-image
+          - get: alpine-image
+      - in_parallel:
+          - do:
+              - task: build-environments
+                image: alpine-image
+                file: source/pipeline/tasks/build-environments.yml
+          - do:
+              - task: build-frontend
+                image: node-image
+                file: source/pipeline/tasks/build-frontend.yml
+                output_mapping:
+                  build: frontend-build
+              - task: build-frontend-image
+                image: kaniko-executor-image
+                file: source/pipeline/tasks/build-image.yml
+                input_mapping:
+                  context: frontend-build
+                output_mapping:
+                  image: frontend-image
+              - put: frontend-image
+                params:
+                  image: frontend-image/image.tar
+      - put: twocan-build
+        params:
+          path: environments
+  - name: development
+    plan:
+      - in_parallel:
+          - get: k8s-gcp-runner-image
+          - get: twocan-build
+            passed:
+              - build-twocan
+      - task: dialtone
+        image: k8s-gcp-runner-image
+        input_mapping:
+          build: twocan-build
+        params:
+          CONTEXT: torrio
+          KUBECONFIG_FILE: ((pipeline.kubeconfig))
+          GCP_SERVICE_ACCOUNT_FILE: ((pipeline.gcp-service-account-k8s))
+        config:
+          platform: linux
+          inputs:
+            - name: build
+          run:
+            path: entrypoint.sh
+            args:
+              - sh
+              - -ecu
+              - |
+                ls build
+                kubectl cluster-info

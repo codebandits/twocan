@@ -1,0 +1,24 @@
+---
+platform: linux
+
+inputs:
+  - name: source
+
+outputs:
+  - name: environments
+
+run:
+  path: sh
+  args:
+    - -ecu
+    - |
+      workdir=$(pwd)
+
+      cd source/deployment/environments
+      environments=$(ls)
+
+      cd $workdir
+      for environment in $environments
+      do
+        kustomize build source/deployment/environments/"$environment" > environments/"$environment".yml
+      done
