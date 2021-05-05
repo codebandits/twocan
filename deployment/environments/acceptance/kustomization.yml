@@ -5,4 +5,5 @@ namespace: twocan-acceptance
 resources:
   - namespace.yml
   - certificate.yml
+  - ingress.yml
   - ../../components/twocan
