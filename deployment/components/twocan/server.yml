@@ -35,13 +35,13 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: api
+  name: server
   labels:
-    component: api
+    component: server
 spec:
   type: ClusterIP
   selector:
-    component: api
+    component: server
   ports:
     - name: http
       port: 80
