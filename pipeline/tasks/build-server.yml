@@ -18,5 +18,5 @@ run:
       ./gradlew :server:shadowJar
 
       cd $workdir
-      cp -a server/build/libs/twocan.server.jar build/app.jar
-      cp -a source/frontend/Dockerfile build/
+      cp -a source/server/build/libs/twocan.server.jar build/app.jar
+      cp -a source/server/Dockerfile build/
