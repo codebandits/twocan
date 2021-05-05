@@ -12,7 +12,8 @@ spec:
         - twocan.io
       secretName: twocan-tls
   rules:
-    - http:
+    - host: twocan.io
+      http:
         paths:
           - path: /
             backend:
