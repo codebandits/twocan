@@ -17,7 +17,7 @@ spec:
         paths:
           - path: /
             backend:
-              serviceName: web
+              serviceName: frontend
               servicePort: http
           - path: /api
             backend:
