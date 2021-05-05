@@ -1,0 +1,24 @@
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: twocan
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/from-to-www-redirect: "true"
+spec:
+  tls:
+    - hosts:
+        - acceptance.twocan.io
+      secretName: twocan-tls
+  rules:
+    - http:
+        paths:
+          - path: /
+            backend:
+              serviceName: web
+              servicePort: http
+          - path: /api
+            backend:
+              serviceName: server
+              servicePort: http
