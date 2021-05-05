@@ -10,7 +10,7 @@ registry=$(extract_param "$params" .source.registry)
 repository=$(extract_param "$params" .source.repository)
 username=$(extract_param "$params" .source.username)
 password=$(extract_param "$params" .source.password)
-previous_version=$(extract_param "$params" .version.number)
+previous_number=$(extract_param "$params" .version.number)
 
 ensure_param_set registry
 ensure_param_set repository
@@ -18,15 +18,15 @@ ensure_param_set username
 ensure_param_set password
 
 regctl registry login "$registry" -u "$username" -p "$password"
-versions=$(get_versions "${registry}/${repository}")
+numbers=$(get_version_numbers "${registry}/${repository}")
 
-if [ -z "$previous_version" ]; then
+if [ -z "$previous_number" ]; then
   >&2 echo "The previous version was not provided. Returning the current version."
-  echo "$versions" | head -1 | lines_to_json
-elif echo "$versions" | grep -q "$previous_version"; then
+  echo "$numbers" | head -1 | numbers_to_versions "${registry}/${repository}"
+elif echo "$numbers" | grep -q "$previous_number"; then
   >&2 echo "The previous version was found. Returning the versions since."
-  echo "$versions" | sed -n "/${previous_version}/!p;//q" | lines_to_json
+  echo "$numbers" | sed -n "/${previous_number}/!p;//q" | numbers_to_versions "${registry}/${repository}"
 else
   >&2 echo "The previous version was not found. Returning the current version."
-  echo "$versions" | head -1 | lines_to_json
+  echo "$numbers" | head -1 | numbers_to_versions "${registry}/${repository}"
 fi

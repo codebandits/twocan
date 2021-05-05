@@ -26,7 +26,7 @@ export IMGPKG_REGISTRY_PASSWORD="$password"
 digest=$(regctl image digest "${registry}/${repository}:${version}")
 
 download_dir="$(pwd)"/download
-mkdir "$download_dir"
+mkdir -p "$download_dir"
 >&2 imgpkg pull -b "${registry}/${repository}:${version}" -o "$(pwd)/download"
 cp -a "$download_dir"/. "$1"
 

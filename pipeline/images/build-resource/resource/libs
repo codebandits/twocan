@@ -5,23 +5,25 @@ set -e
 ensure_param_set() {
   eval "param=\$${1}"
   if [ -z "$param" ]; then
-    >&2 echo "Parameter $1 not set. Aborting."
+    echo >&2 "Parameter $1 not set. Aborting."
     exit 1
   fi
 }
 
-lines_to_json() {
-  jq --raw-input --slurp 'split("\n") | map(select(length > 0)) | map({number: .})'
+numbers_to_versions() {
+  cat | \
+      xargs -n1 -I@ sh -c "regctl image digest $1:@ | sed 's/^/@ /'" | \
+      jq --raw-input --slurp 'split("\n") | map(select(length > 0) | split(" ") | {number: .[0], digest: .[1]})'
 }
 
 extract_param() {
   echo "$1" | jq -r "$2 | select (.!=null)"
 }
 
-get_versions() {
-  regctl tag ls "$1" | grep -E "^[1-9]+[0-9]*$" | sort -r || [ $? -eq 1 ]
+get_version_numbers() {
+  regctl tag ls "$1" | grep -E "^[1-9]+[0-9]*$" | sort -rn || [ $? -eq 1 ]
 }
 
 format_version() {
-  jq -n --arg number "$1" --arg digest "$2" '{version: {number: $number}, metadata: [{"name": "digest", "value": $digest}]}'
+  jq -n --arg number "$1" --arg digest "$2" '{version: {number: $number, digest: $digest}}'
 }
