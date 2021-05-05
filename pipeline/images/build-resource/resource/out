@@ -33,7 +33,7 @@ previous_digest=$(if [ -z "$previous_version" ]; then echo; else regctl image di
 cd "$1"
 
 mkdir -p "$path"/.imgpkg
-cat "$path"/*.yml | >&2 kbld -f - --lock-output "$path"/.imgpkg/images.yml > /dev/null
+cat "$path"/*.yml | >&2 kbld -f - --imgpkg-lock-output "$path"/.imgpkg/images.yml > /dev/null
 >&2 imgpkg push -b "${registry}/${repository}" -f "$path"
 
 latest_digest=$(regctl image digest "${registry}/${repository}")

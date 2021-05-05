@@ -27,7 +27,6 @@ digest=$(regctl image digest "${registry}/${repository}:${version}")
 
 download_dir="$(pwd)"/download
 mkdir "$download_dir"
->&2 echo "running imgpkg pull -b ${registry}/${repository}:${version} -o $(pwd)/download"
 >&2 imgpkg pull -b "${registry}/${repository}:${version}" -o "$(pwd)/download"
 cp -a "$download_dir"/. "$1"
 
