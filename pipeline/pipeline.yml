@@ -94,7 +94,7 @@ groups:
   - name: main
     jobs:
       - build-twocan
-      - development
+      - acceptance
   - name: pipeline
     jobs:
       - yml-runner
@@ -224,14 +224,14 @@ jobs:
       - put: twocan-build
         params:
           path: environments
-  - name: development
+  - name: acceptance
     plan:
       - in_parallel:
           - get: k8s-gcp-runner-image
           - get: twocan-build
             passed:
               - build-twocan
-      - task: dialtone
+      - task: deploy
         image: k8s-gcp-runner-image
         input_mapping:
           build: twocan-build
@@ -249,5 +249,8 @@ jobs:
               - sh
               - -ecu
               - |
-                ls build
-                kubectl cluster-info
+                kapp deploy \
+                    --namespace apps \
+                    --app brite-tank-codebandits \
+                    --yes \
+                    -f build/acceptance.yml
