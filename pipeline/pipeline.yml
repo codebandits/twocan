@@ -95,6 +95,7 @@ groups:
     jobs:
       - build-twocan
       - acceptance
+      - production
   - name: pipeline
     jobs:
       - yml-runner
@@ -251,6 +252,36 @@ jobs:
               - |
                 kapp deploy \
                     --namespace apps \
-                    --app brite-tank-codebandits \
+                    --app twocan-acceptance \
                     --yes \
                     -f build/acceptance.yml
+  - name: production
+    plan:
+      - in_parallel:
+          - get: k8s-gcp-runner-image
+          - get: twocan-build
+            passed:
+              - acceptance
+      - task: deploy
+        image: k8s-gcp-runner-image
+        input_mapping:
+          build: twocan-build
+        params:
+          CONTEXT: capone
+          KUBECONFIG_FILE: ((pipeline.kubeconfig))
+          GCP_SERVICE_ACCOUNT_FILE: ((pipeline.gcp-service-account-k8s))
+        config:
+          platform: linux
+          inputs:
+            - name: build
+          run:
+            path: entrypoint.sh
+            args:
+              - sh
+              - -ecu
+              - |
+                kapp deploy \
+                    --namespace apps \
+                    --app twocan-production \
+                    --yes \
+                    -f build/production.yml
