@@ -1,0 +1,46 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: server
+  labels:
+    component: server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: server
+  template:
+    metadata:
+      labels:
+        component: server
+    spec:
+      containers:
+        - name: server
+          image: us-central1-docker.pkg.dev/tools-275701/twocan/server
+          ports:
+            - containerPort: 8080
+          livenessProbe:
+            httpGet:
+              path: /liveness
+              port: 8181
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 8181
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api
+  labels:
+    component: api
+spec:
+  type: ClusterIP
+  selector:
+    component: api
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
