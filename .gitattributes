@@ -1,2 +1,3 @@
 k8s/secrets/** filter=git-crypt diff=git-crypt
 pipeline/brite-tank/secrets/** filter=git-crypt diff=git-crypt
+deployment/secrets/** filter=git-crypt diff=git-crypt

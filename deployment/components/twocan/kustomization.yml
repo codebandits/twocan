@@ -4,3 +4,8 @@ kind: Kustomization
 resources:
   - frontend.yml
   - server.yml
+  - ../../secrets/image-pull
+patches:
+  - path: image-pull-secret.yml
+    target:
+      kind: Deployment
