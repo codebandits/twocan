@@ -28,6 +28,9 @@ spec:
             httpGet:
               path: /readiness
               port: 8181
+          envFrom:
+            - configMapRef:
+                name: server
 ---
 apiVersion: v1
 kind: Service

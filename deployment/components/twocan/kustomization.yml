@@ -5,6 +5,10 @@ resources:
   - frontend.yml
   - server.yml
   - ../../secrets/image-pull
+configMapGenerator:
+  - name: server
+    envs:
+      - server.properties
 patches:
   - path: image-pull-secret.yml
     target:
