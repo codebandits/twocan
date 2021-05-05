@@ -7,6 +7,9 @@ inputs:
 outputs:
   - name: build
 
+caches:
+  - path: source/.gradle
+
 run:
   path: sh
   args:
@@ -15,6 +18,7 @@ run:
       workdir=$(pwd)
 
       cd source
+      export GRADLE_USER_HOME=$(pwd)/.gradle
       ./gradlew :server:shadowJar
 
       cd $workdir
