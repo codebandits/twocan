@@ -4,6 +4,7 @@ var_sources:
     config:
       vars:
         node-version: "15-alpine" # https://hub.docker.com/_/node
+        jdk-version: "16-slim" # https://hub.docker.com/_/openjdk
         alpine-version: "3.13.5" # https://alpinelinux.org/downloads/
         kaniko-version: "v1.5.2-slim" # https://git.io/JOEAf
 
@@ -36,6 +37,11 @@ resources:
     source:
       repository: node
       tag: ((vars:node-version))
+  - name: jdk-image
+    type: registry-image
+    source:
+      repository: openjdk
+      tag: ((vars:jdk-version))
   - name: kaniko-executor-image
     type: registry-image
     source:
@@ -59,6 +65,13 @@ resources:
     type: registry-image
     source:
       repository: us-central1-docker.pkg.dev/tools-275701/twocan/frontend
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
+  - name: server-image
+    type: registry-image
+    source:
+      repository: us-central1-docker.pkg.dev/tools-275701/twocan/server
       tag: latest
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
@@ -135,6 +148,7 @@ jobs:
       - in_parallel:
           - get: source
           - get: node-image
+          - get: jdk-image
           - get: kaniko-executor-image
           - get: alpine-image
       - in_parallel:
@@ -158,6 +172,22 @@ jobs:
               - put: frontend-image
                 params:
                   image: frontend-image/image.tar
+          - do:
+              - task: build-server
+                image: jdk-image
+                file: source/pipeline/tasks/build-server.yml
+                output_mapping:
+                  build: server-build
+              - task: build-server-image
+                image: kaniko-executor-image
+                file: source/pipeline/tasks/build-image.yml
+                input_mapping:
+                  context: server-build
+                output_mapping:
+                  image: server-image
+              - put: server-image
+                params:
+                  image: server-image/image.tar
       - put: twocan-build
         params:
           path: environments
