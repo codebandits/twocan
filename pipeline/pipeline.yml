@@ -54,6 +54,13 @@ resources:
       tag: latest
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
+  - name: yml-runner-image
+    type: registry-image
+    source:
+      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/yml-runner
+      tag: latest
+      username: _json_key
+      password: ((pipeline.gcp-service-account-registry))
   - name: build-resource-image
     type: registry-image
     source:
@@ -90,10 +97,35 @@ groups:
       - development
   - name: pipeline
     jobs:
+      - yml-runner
       - k8s-gcp-runner
       - build-resource
 
 jobs:
+  - name: yml-runner
+    serial: true
+    plan:
+      - in_parallel:
+          - get: source
+          - get: alpine-image
+          - get: kaniko-executor-image
+      - task: prepare-yml-runner-image
+        image: alpine-image
+        file: source/pipeline/tasks/copy.yml
+        params:
+          path: source/pipeline/images/yml-runner/.
+        output_mapping:
+          output: yml-runner-image-source
+      - task: build-yml-runner-image
+        image: kaniko-executor-image
+        file: source/pipeline/tasks/build-image.yml
+        input_mapping:
+          context: yml-runner-image-source
+        output_mapping:
+          image: yml-runner-image
+      - put: yml-runner-image
+        params:
+          image: yml-runner-image/image.tar
   - name: k8s-gcp-runner
     serial: true
     plan:
@@ -151,10 +183,11 @@ jobs:
           - get: jdk-image
           - get: kaniko-executor-image
           - get: alpine-image
+          - get: yml-runner-image
       - in_parallel:
           - do:
               - task: build-environments
-                image: alpine-image
+                image: yml-runner-image
                 file: source/pipeline/tasks/build-environments.yml
           - do:
               - task: build-frontend
