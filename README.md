@@ -33,13 +33,15 @@ npm start
 ./gradlew :server:run
 ```
 
-## The pipeline
+## CI/CD Pipeline [![CI/CD Pipeline](https://ci.distro.beer/api/v1/teams/codebandits/pipelines/twocan/badge)](https://ci.distro.beer/teams/codebandits/pipelines/twocan)
+
+https://ci.distro.beer/teams/codebandits/pipelines/twocan
 
 If you're changing the pipeline, you might find these commands helpful.
 
 ```
 fly --target codebandits login --team-name codebandits --concourse-url https://ci.distro.beer
-fly --target codebandits set-pipeline --pipeline twocan --config pipeline/pipeline.yaml
+fly --target codebandits set-pipeline --pipeline twocan --config pipeline/pipeline.yml
 ```
 
 Set the pipeline secrets:
@@ -50,7 +52,7 @@ kubectl config use-context remus
 kustomize build pipeline/brite-tank | \
     kapp deploy \
     --namespace apps \
-    --app brite-tank-codebandits \
+    --app brite-tank-twocan \
     --yes \
     -f -
 direnv reload
