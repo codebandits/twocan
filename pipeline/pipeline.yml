@@ -7,6 +7,7 @@ var_sources:
         jdk-version: "16-slim" # https://hub.docker.com/_/openjdk
         kaniko-version: "v1.6.0-debug" # https://git.io/JOEAf
         kustomize-version: "v4.1.2" # https://git.io/JOEpy
+        kapp-version: "0.36.0" # https://git.io/JOEp7
 
 resource_types:
   - name: bundle
@@ -47,6 +48,11 @@ resources:
       tag: latest
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
+  - name: kapp-image
+    type: registry-image
+    source:
+      repository: taylorsilva/carvel-kapp
+      tag: ((vars:kapp-version))
   - name: kustomize-image
     type: registry-image
     source:

@@ -1,0 +1,25 @@
+---
+platform: linux
+
+params:
+  APP_NAME:
+  FILE_PATH:
+  K8S_CONTEXT:
+  KUBECONFIG_FILE:
+  GCP_SERVICE_ACCOUNT_FILE:
+
+inputs:
+  - name: build
+
+run:
+  path: sh
+  args:
+    - -ecu
+    - |
+      mkdir -p .config
+      printenv KUBECONFIG_FILE > .config/kubeconfig
+      export KAPP_KUBECONFIG=$(realpath .config/kubeconfig)
+      export KAPP_KUBECONFIG_CONTEXT=$K8S_CONTEXT
+      printenv GCP_SERVICE_ACCOUNT_FILE > .config/gcp-service-account.json
+      export GOOGLE_APPLICATION_CREDENTIALS=$(realpath .config/gcp-service-account.json)
+      kapp deploy --namespace apps --app "$APP_NAME" --yes -f "build/$FILE_PATH"
