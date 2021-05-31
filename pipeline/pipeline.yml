@@ -41,13 +41,6 @@ resources:
     source:
       repository: gcr.io/kaniko-project/executor
       tag: ((vars:kaniko-version))
-  - name: k8s-gcp-runner-image
-    type: registry-image
-    source:
-      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/k8s-gcp-runner
-      tag: latest
-      username: _json_key
-      password: ((pipeline.gcp-service-account-registry))
   - name: kapp-image
     type: registry-image
     source:
@@ -80,33 +73,7 @@ resources:
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
 
-groups:
-  - name: main
-    jobs:
-      - build-twocan
-      - acceptance
-      - production
-  - name: pipeline
-    jobs:
-      - k8s-gcp-runner
-
 jobs:
-  - name: k8s-gcp-runner
-    serial: true
-    plan:
-      - in_parallel:
-          - get: source
-          - get: kaniko-executor-image
-      - task: build-k8s-gcp-runner-image
-        image: kaniko-executor-image
-        file: source/pipeline/tasks/build-image.yml
-        params:
-          context_path: pipeline/images/k8s-gcp-runner
-        output_mapping:
-          image: k8s-gcp-runner-image
-      - put: k8s-gcp-runner-image
-        params:
-          image: k8s-gcp-runner-image/image.tar
   - name: build-twocan
     serial: true
     plan:
@@ -159,60 +126,38 @@ jobs:
   - name: acceptance
     plan:
       - in_parallel:
-          - get: k8s-gcp-runner-image
+          - get: source
+          - get: kapp-image
           - get: twocan-build
             passed:
               - build-twocan
       - task: deploy
-        image: k8s-gcp-runner-image
+        image: kapp-image
         input_mapping:
           build: twocan-build
+        file: source/pipeline/tasks/deploy.yml
         params:
-          CONTEXT: torrio
+          APP_NAME: twocan-acceptance
+          FILE_PATH: acceptance.yml
+          K8S_CONTEXT: torrio
           KUBECONFIG_FILE: ((pipeline.kubeconfig))
           GCP_SERVICE_ACCOUNT_FILE: ((pipeline.gcp-service-account-k8s))
-        config:
-          platform: linux
-          inputs:
-            - name: build
-          run:
-            path: entrypoint.sh
-            args:
-              - sh
-              - -ecu
-              - |
-                kapp deploy \
-                    --namespace apps \
-                    --app twocan-acceptance \
-                    --yes \
-                    -f build/acceptance.yml
   - name: production
     plan:
       - in_parallel:
-          - get: k8s-gcp-runner-image
+          - get: source
+          - get: kapp-image
           - get: twocan-build
             passed:
               - acceptance
       - task: deploy
-        image: k8s-gcp-runner-image
+        image: kapp-image
         input_mapping:
           build: twocan-build
+        file: source/pipeline/tasks/deploy.yml
         params:
-          CONTEXT: capone
+          APP_NAME: twocan-production
+          FILE_PATH: production.yml
+          K8S_CONTEXT: capone
           KUBECONFIG_FILE: ((pipeline.kubeconfig))
           GCP_SERVICE_ACCOUNT_FILE: ((pipeline.gcp-service-account-k8s))
-        config:
-          platform: linux
-          inputs:
-            - name: build
-          run:
-            path: entrypoint.sh
-            args:
-              - sh
-              - -ecu
-              - |
-                kapp deploy \
-                    --namespace apps \
-                    --app twocan-production \
-                    --yes \
-                    -f build/production.yml
