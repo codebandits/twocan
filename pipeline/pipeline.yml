@@ -6,16 +6,14 @@ var_sources:
         node-version: "15-alpine" # https://hub.docker.com/_/node
         jdk-version: "16-slim" # https://hub.docker.com/_/openjdk
         alpine-version: "3.13.5" # https://alpinelinux.org/downloads/
-        kaniko-version: "v1.5.2-slim" # https://git.io/JOEAf
+        kaniko-version: "v1.6.0-debug" # https://git.io/JOEAf
 
 resource_types:
-  - name: build
+  - name: bundle
     type: docker-image
     source:
-      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/build-resource
+      repository: us-docker.pkg.dev/tools-275701/codebandits/bundle-resource
       tag: latest
-      username: _json_key
-      password: ((pipeline.gcp-service-account-registry))
 
 resources:
   - name: source
@@ -61,13 +59,6 @@ resources:
       tag: latest
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
-  - name: build-resource-image
-    type: registry-image
-    source:
-      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/build-resource
-      tag: latest
-      username: _json_key
-      password: ((pipeline.gcp-service-account-registry))
   - name: frontend-image
     type: registry-image
     source:
@@ -83,7 +74,7 @@ resources:
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
   - name: twocan-build
-    type: build
+    type: bundle
     source:
       registry: us-central1-docker.pkg.dev
       repository: tools-275701/twocan/build
@@ -100,7 +91,6 @@ groups:
     jobs:
       - yml-runner
       - k8s-gcp-runner
-      - build-resource
 
 jobs:
   - name: yml-runner
@@ -110,18 +100,11 @@ jobs:
           - get: source
           - get: alpine-image
           - get: kaniko-executor-image
-      - task: prepare-yml-runner-image
-        image: alpine-image
-        file: source/pipeline/tasks/copy.yml
-        params:
-          path: source/pipeline/images/yml-runner/.
-        output_mapping:
-          output: yml-runner-image-source
       - task: build-yml-runner-image
         image: kaniko-executor-image
         file: source/pipeline/tasks/build-image.yml
-        input_mapping:
-          context: yml-runner-image-source
+        params:
+          context_path: pipeline/images/yml-runner
         output_mapping:
           image: yml-runner-image
       - put: yml-runner-image
@@ -134,47 +117,16 @@ jobs:
           - get: source
           - get: alpine-image
           - get: kaniko-executor-image
-      - task: prepare-k8s-gcp-runner-image
-        image: alpine-image
-        file: source/pipeline/tasks/copy.yml
-        params:
-          path: source/pipeline/images/k8s-gcp-runner/.
-        output_mapping:
-          output: k8s-gcp-runner-image-source
       - task: build-k8s-gcp-runner-image
         image: kaniko-executor-image
         file: source/pipeline/tasks/build-image.yml
-        input_mapping:
-          context: k8s-gcp-runner-image-source
+        params:
+          context_path: pipeline/images/k8s-gcp-runner
         output_mapping:
           image: k8s-gcp-runner-image
       - put: k8s-gcp-runner-image
         params:
           image: k8s-gcp-runner-image/image.tar
-  - name: build-resource
-    serial: true
-    plan:
-      - in_parallel:
-          - get: source
-          - get: alpine-image
-          - get: kaniko-executor-image
-      - task: prepare-build-resource-image
-        image: alpine-image
-        file: source/pipeline/tasks/copy.yml
-        params:
-          path: source/pipeline/images/build-resource/.
-        output_mapping:
-          output: build-resource-image-source
-      - task: build-build-resource-image
-        image: kaniko-executor-image
-        file: source/pipeline/tasks/build-image.yml
-        input_mapping:
-          context: build-resource-image-source
-        output_mapping:
-          image: build-resource-image
-      - put: build-resource-image
-        params:
-          image: build-resource-image/image.tar
   - name: build-twocan
     serial: true
     plan:
@@ -200,7 +152,7 @@ jobs:
                 image: kaniko-executor-image
                 file: source/pipeline/tasks/build-image.yml
                 input_mapping:
-                  context: frontend-build
+                  source: frontend-build
                 output_mapping:
                   image: frontend-image
               - put: frontend-image
@@ -216,7 +168,7 @@ jobs:
                 image: kaniko-executor-image
                 file: source/pipeline/tasks/build-image.yml
                 input_mapping:
-                  context: server-build
+                  source: server-build
                 output_mapping:
                   image: server-image
               - put: server-image

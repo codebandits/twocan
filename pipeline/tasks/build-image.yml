@@ -1,17 +1,23 @@
 ---
 platform: linux
 
+params:
+  context_path: .
+
 inputs:
-  - name: context
+  - name: source
 
 outputs:
   - name: image
 
 run:
-  path: /kaniko/executor
+  path: sh
   args:
-    - --reproducible
-    - --context=context
-    - --no-push
-    - --destination=noop # https://git.io/JJDXu
-    - --tarPath=image/image.tar
+    - -ecu
+    - |
+      /kaniko/executor \
+        --reproducible \
+        --context "source/$context_path" \
+        --no-push \
+        --destination noop \
+        --tarPath image/image.tar
