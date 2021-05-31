@@ -79,6 +79,7 @@ jobs:
     plan:
       - in_parallel:
           - get: source
+            trigger: true
           - get: node-image
           - get: jdk-image
           - get: kaniko-executor-image
