@@ -7,6 +7,7 @@ var_sources:
         jdk-version: "16-slim" # https://hub.docker.com/_/openjdk
         alpine-version: "3.13.5" # https://alpinelinux.org/downloads/
         kaniko-version: "v1.6.0-debug" # https://git.io/JOEAf
+        kustomize-version: "v4.1.2" # https://git.io/JOEpy
 
 resource_types:
   - name: bundle
@@ -52,13 +53,11 @@ resources:
       tag: latest
       username: _json_key
       password: ((pipeline.gcp-service-account-registry))
-  - name: yml-runner-image
+  - name: kustomize-image
     type: registry-image
     source:
-      repository: us-central1-docker.pkg.dev/tools-275701/twocan/pipeline/yml-runner
-      tag: latest
-      username: _json_key
-      password: ((pipeline.gcp-service-account-registry))
+      repository: k8s.gcr.io/kustomize/kustomize
+      tag: ((vars:kustomize-version))
   - name: frontend-image
     type: registry-image
     source:
@@ -89,27 +88,9 @@ groups:
       - production
   - name: pipeline
     jobs:
-      - yml-runner
       - k8s-gcp-runner
 
 jobs:
-  - name: yml-runner
-    serial: true
-    plan:
-      - in_parallel:
-          - get: source
-          - get: alpine-image
-          - get: kaniko-executor-image
-      - task: build-yml-runner-image
-        image: kaniko-executor-image
-        file: source/pipeline/tasks/build-image.yml
-        params:
-          context_path: pipeline/images/yml-runner
-        output_mapping:
-          image: yml-runner-image
-      - put: yml-runner-image
-        params:
-          image: yml-runner-image/image.tar
   - name: k8s-gcp-runner
     serial: true
     plan:
@@ -136,11 +117,11 @@ jobs:
           - get: jdk-image
           - get: kaniko-executor-image
           - get: alpine-image
-          - get: yml-runner-image
+          - get: kustomize-image
       - in_parallel:
           - do:
               - task: build-environments
-                image: yml-runner-image
+                image: kustomize-image
                 file: source/pipeline/tasks/build-environments.yml
           - do:
               - task: build-frontend
