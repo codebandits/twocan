@@ -5,7 +5,6 @@ var_sources:
       vars:
         node-version: "15-alpine" # https://hub.docker.com/_/node
         jdk-version: "16-slim" # https://hub.docker.com/_/openjdk
-        alpine-version: "3.13.5" # https://alpinelinux.org/downloads/
         kaniko-version: "v1.6.0-debug" # https://git.io/JOEAf
         kustomize-version: "v4.1.2" # https://git.io/JOEpy
 
@@ -26,11 +25,6 @@ resources:
       git_crypt_key: ((pipeline.git-crypt-key))
     check_every: 24h
     webhook_token: ((pipeline.git-webhook-token))
-  - name: alpine-image
-    type: registry-image
-    source:
-      repository: alpine
-      tag: ((vars:alpine-version))
   - name: node-image
     type: registry-image
     source:
@@ -96,7 +90,6 @@ jobs:
     plan:
       - in_parallel:
           - get: source
-          - get: alpine-image
           - get: kaniko-executor-image
       - task: build-k8s-gcp-runner-image
         image: kaniko-executor-image
@@ -116,7 +109,6 @@ jobs:
           - get: node-image
           - get: jdk-image
           - get: kaniko-executor-image
-          - get: alpine-image
           - get: kustomize-image
       - in_parallel:
           - do:
