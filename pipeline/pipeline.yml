@@ -130,6 +130,7 @@ jobs:
           - get: source
           - get: kapp-image
           - get: twocan-build
+            trigger: true
             passed:
               - build-twocan
       - task: deploy
