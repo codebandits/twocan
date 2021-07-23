@@ -7,7 +7,6 @@ var_sources:
         jdk-version: "16-slim" # https://hub.docker.com/_/openjdk
         kaniko-version: "v1.6.0-debug" # https://git.io/JOEAf
         kustomize-version: "v4.1.2" # https://git.io/JOEpy
-        kapp-version: "0.36.0" # https://git.io/JOEp7
 
 resource_types:
   - name: bundle
@@ -41,11 +40,10 @@ resources:
     source:
       repository: gcr.io/kaniko-project/executor
       tag: ((vars:kaniko-version))
-  - name: kapp-image
+  - name: carvel-apps-image
     type: registry-image
     source:
-      repository: taylorsilva/carvel-kapp
-      tag: ((vars:kapp-version))
+      repository: taylorsilva/carvel-apps
   - name: kustomize-image
     type: registry-image
     source:
@@ -128,13 +126,13 @@ jobs:
     plan:
       - in_parallel:
           - get: source
-          - get: kapp-image
+          - get: carvel-apps-image
           - get: twocan-build
             trigger: true
             passed:
               - build-twocan
       - task: deploy
-        image: kapp-image
+        image: carvel-apps-image
         input_mapping:
           build: twocan-build
         file: source/pipeline/tasks/deploy.yml
@@ -148,12 +146,12 @@ jobs:
     plan:
       - in_parallel:
           - get: source
-          - get: kapp-image
+          - get: carvel-apps-image
           - get: twocan-build
             passed:
               - acceptance
       - task: deploy
-        image: kapp-image
+        image: carvel-apps-image
         input_mapping:
           build: twocan-build
         file: source/pipeline/tasks/deploy.yml

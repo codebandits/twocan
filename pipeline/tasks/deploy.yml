@@ -22,4 +22,5 @@ run:
       export KAPP_KUBECONFIG_CONTEXT=$K8S_CONTEXT
       printenv GCP_SERVICE_ACCOUNT_FILE > .config/gcp-service-account.json
       export GOOGLE_APPLICATION_CREDENTIALS=$(realpath .config/gcp-service-account.json)
-      kapp deploy --namespace apps --app "$APP_NAME" --yes -f "build/$FILE_PATH"
+      kbld -f "build/$FILE_PATH" -f build/.imgpkg/images.yml | \
+        kapp deploy --namespace apps --app "$APP_NAME" --yes -f -
