@@ -28,7 +28,8 @@ internal object CreateBird {
     operator fun invoke(sessionLens: SessionLens): RoutingHttpHandler {
         return "/api/birds" bind Method.POST to { request ->
             val requestBody = requestBodyLens(request)
-            when (val validationResult = validator(requestBody)) {
+            val transformedRequestBody = requestBody.copy(firstName = requestBody.firstName.trim(), lastName = requestBody.lastName.trim())
+            when (val validationResult = validator(transformedRequestBody)) {
                 is Invalid -> {
                     submitResponseLens.inject(
                         validationResult.toBadRequestErrors(),
@@ -38,8 +39,8 @@ internal object CreateBird {
                 is Valid -> {
                     val bird = Bird(
                         id = UUID.randomUUID(),
-                        firstName = requestBody.firstName,
-                        lastName = requestBody.lastName
+                        firstName = validationResult.value.firstName,
+                        lastName = validationResult.value.lastName
                     )
                     val session = sessionLens(request)
                     if (session != null) {

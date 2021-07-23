@@ -1,8 +1,8 @@
 package io.twocan.birds
 
 import com.natpryce.hamkrest.assertion.assertThat
+import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.has
-import com.natpryce.hamkrest.hasElement
 import com.natpryce.hamkrest.isA
 import io.twocan.http.GetResponse
 import io.twocan.http.SubmitResponse
@@ -10,6 +10,7 @@ import io.twocan.http.setupTestServer
 import io.twocan.identity.Session
 import io.twocan.identity.User
 import io.twocan.serialization.Json.auto
+import io.twocan.test.assertIsA
 import io.twocan.test.hasKeyValue
 import org.http4k.cloudnative.env.Environment
 import org.http4k.core.*
@@ -32,6 +33,7 @@ internal object BirdsValidationTest : Spek({
         val subject = BirdsRoutes(environment = environment)
         val createBirdRequestBodyLens = Body.auto<CreateBird.RequestBody>().toLens()
         val submitResponseLens = Body.auto<SubmitResponse>().toLens()
+        val getBirdResponseLens = Body.auto<GetResponse<Bird>>().toLens()
 
         val validRequestBody = CreateBird.RequestBody(
             firstName = "Mark",
@@ -58,6 +60,32 @@ internal object BirdsValidationTest : Spek({
                         )
                     )
                 )
+            }
+        }
+
+        describe("when the first name contains only whitespace") {
+            val invalidRequestBody = validRequestBody.copy(firstName = " ")
+            val request = createBirdRequestBodyLens(invalidRequestBody, Request(Method.POST, "/api/birds"))
+
+            it("should return errors") {
+                assertThat(
+                    subject(request), hasBody(
+                        submitResponseLens, isA(
+                            has(SubmitResponse.BadRequestErrors::errors, hasKeyValue("firstName", "required"))
+                        )
+                    )
+                )
+            }
+        }
+
+        describe("when the first name contains leading/trailing whitespace") {
+            val requestBody = validRequestBody.copy(firstName = " " + "Mark" + "  ")
+            val request = createBirdRequestBodyLens(requestBody, Request(Method.POST, "/api/birds"))
+
+            it("should trim the whitespace") {
+                val birdId = assertIsA<SubmitResponse.Created>(submitResponseLens(subject(request))).id
+                val getBirdRequest = Request(Method.GET, "/api/birds/${birdId}")
+                assertThat(subject(getBirdRequest), hasBody(getBirdResponseLens, isA(has(GetResponse.Ok<Bird>::data, has(Bird::firstName, equalTo("Mark"))))))
             }
         }
     }
