@@ -1,5 +1,6 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 buildscript {
     repositories {
@@ -16,6 +17,12 @@ buildscript {
 subprojects {
     repositories {
         mavenCentral()
+    }
+
+    tasks.withType<KotlinCompile> {
+        kotlinOptions {
+            jvmTarget = Versions.JvmTarget
+        }
     }
 
     tasks.withType<Jar> {

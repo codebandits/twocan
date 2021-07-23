@@ -4,7 +4,7 @@ import ListItem from '@material-ui/core/ListItem'
 import ListItemIcon from '@material-ui/core/ListItemIcon'
 import ListItemText from '@material-ui/core/ListItemText'
 import React from 'react'
-import {useSession} from '../identity/session'
+import {useIsLoggedIn} from '../identity/is-logged-in'
 import {Link} from 'react-router-dom'
 import {Home} from '@material-ui/icons'
 import {Box, SvgIcon} from '@material-ui/core'
@@ -16,8 +16,7 @@ import {ReactComponent as FlockIcon} from '../birds/flock.svg'
 import {ReactComponent as FlightIcon} from '../birds/flight.svg'
 
 export const DrawerMenu = () => {
-    const {data: session} = useSession()
-    const loggedIn = Boolean(session)
+    const loggedIn = useIsLoggedIn()
     const logout = useLogout()
     return (
         <div data-testid="drawer-menu">
@@ -30,24 +29,24 @@ export const DrawerMenu = () => {
                             </ListItemIcon>
                             <ListItemText primary="Birds"/>
                         </ListItem>
-                       <Box display="none">
-                           <ListItem button component={Link} to="/flocks">
-                               <ListItemIcon>
-                                   <SvgIcon><FlockIcon/></SvgIcon>
-                               </ListItemIcon>
-                               <ListItemText primary="Flocks"/>
-                           </ListItem>
-                           <ListItem button component={Link} to="/flights">
-                               <ListItemIcon>
-                                   <SvgIcon><FlightIcon/></SvgIcon>
-                               </ListItemIcon>
-                               <ListItemText primary="Flights"/>
-                           </ListItem>
-                       </Box>
+                        <Box display="none">
+                            <ListItem button component={Link} to="/flocks">
+                                <ListItemIcon>
+                                    <SvgIcon><FlockIcon/></SvgIcon>
+                                </ListItemIcon>
+                                <ListItemText primary="Flocks"/>
+                            </ListItem>
+                            <ListItem button component={Link} to="/flights">
+                                <ListItemIcon>
+                                    <SvgIcon><FlightIcon/></SvgIcon>
+                                </ListItemIcon>
+                                <ListItemText primary="Flights"/>
+                            </ListItem>
+                        </Box>
                     </List>
                     <Divider/>
                     <List>
-                        <ListItem button onClick={logout}>
+                        <ListItem button onClick={() => logout()}>
                             <ListItemIcon><SvgIcon><LogoutIcon/></SvgIcon></ListItemIcon>
                             <ListItemText primary="Logout"/>
                         </ListItem>

@@ -1,5 +1,4 @@
-import {useQuery} from "react-query";
-import {fetcher} from "../fetcher";
+import {useFetchGet} from '../fetch/fetch-get'
 
 export type Bird = {
     id: string
@@ -7,4 +6,4 @@ export type Bird = {
     lastName: string
 }
 
-export const useBirds = () => useQuery('birds', () => fetcher<Bird[]>('/api/birds'))
+export const useBirds = () => useFetchGet<Bird[]>('/api/birds', 'birds')

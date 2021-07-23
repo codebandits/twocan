@@ -25,8 +25,8 @@ describe('birds', () => {
         ]
 
         beforeEach(async () => {
-            await testServer.get('/api/session').thenJson(200, {data: session})
-            await testServer.get('/api/birds').thenJson(200, {data: birds})
+            await testServer.get('/api/session').thenJson(200, {status: 'OK', data: session})
+            await testServer.get('/api/birds').thenJson(200, {status: 'OK', data: birds})
             await render(<App/>)
         })
 
@@ -53,7 +53,7 @@ describe('birds', () => {
                 userEvent.type(within(dialog).getByLabelText('First Name'), 'Samuel')
                 userEvent.type(within(dialog).getByLabelText('Last Name'), 'Clemens')
 
-                addBirdEndpoint = await testServer.post('/api/birds').thenReply(200)
+                addBirdEndpoint = await testServer.post('/api/birds').thenJson(200, {status: 'CREATED', id: '99'})
                 userEvent.click(within(dialog).getByRole('button', {name: 'Add'}))
                 await waitForElementToBeRemoved(() => screen.queryByRole('dialog'))
             })

@@ -13,7 +13,7 @@ describe('session', () => {
     describe('when the user is logged out', () => {
 
         beforeEach(async () => {
-            await testServer.get('/api/session').thenJson(200, {data: null})
+            await testServer.get('/api/session').thenJson(200, {status: 'OK', data: null})
             await render(<App/>)
         })
 
@@ -45,7 +45,8 @@ describe('session', () => {
         }
 
         beforeEach(async () => {
-            await testServer.get('/api/session').thenJson(200, {data: session})
+            await testServer.get('/api/session').thenJson(200, {status: 'OK', data: session})
+            await testServer.get('/api/birds').thenJson(200, {status: 'OK', data: []})
             await render(<App/>)
         })
 
@@ -62,7 +63,7 @@ describe('session', () => {
 
     describe('when the user clicks the login option in the menu', () => {
         beforeEach(async () => {
-            await testServer.get('/api/session').thenJson(200, {data: null})
+            await testServer.get('/api/session').thenJson(200, {status: 'OK', data: null})
             await render(<App/>)
             const menu = await screen.findByTestId('drawer-menu')
             const loginButton = within(menu).getByRole('button', {name: 'Login'})
@@ -88,8 +89,9 @@ describe('session', () => {
 
                 userEvent.type(emailAddressInput, 'bird@example.com')
 
-                loginEndpoint = await testServer.post('/api/login').thenReply(200)
-                await testServer.get('/api/session').thenJson(200, {data: session})
+                loginEndpoint = await testServer.post('/api/login').thenJson(200, {status: 'ACCEPTED'})
+                await testServer.get('/api/session').thenJson(200, {status: 'OK', data: session})
+                await testServer.get('/api/birds').thenJson(200, {status: 'OK', data: []})
 
                 userEvent.click(submit)
             })
@@ -106,7 +108,7 @@ describe('session', () => {
                 await waitFor(async () => {
                     const main = await screen.findByRole('main')
                     expect(main).not.toHaveTextContent('Login')
-                    expect(main).toHaveTextContent('Lorem ipsum dolor sit amet')
+                    expect(main).toHaveTextContent('Birds')
                 })
             })
 
@@ -114,7 +116,7 @@ describe('session', () => {
                 beforeEach(async () => {
                     const logoutButton = await screen.findByRole('button', {name: 'Logout'})
                     logoutEndpoint = await testServer.post('/api/logout').thenReply(200)
-                    await testServer.get('/api/session').thenJson(200, {data: null})
+                    await testServer.get('/api/session').thenJson(200, {status: 'OK', data: null})
                     userEvent.click(logoutButton)
                 })
 
@@ -128,7 +130,7 @@ describe('session', () => {
                 it('should navigate to the homepage', async () => {
                     await waitFor(async () => {
                         const main = await screen.findByRole('main')
-                        expect(main).not.toHaveTextContent('Lorem ipsum dolor sit amet')
+                        expect(main).not.toHaveTextContent('Birds')
                         expect(main).toHaveTextContent('With Twocan you can find out what two can do.')
                     })
                 })

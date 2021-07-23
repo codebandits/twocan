@@ -18,6 +18,7 @@ import {ReactComponent as BirdIcon} from './bird.svg'
 import {Bird, useBirds} from "./bird";
 import {useDialogState} from "../dialog";
 import {AddBirdDialog} from "./add-bird-dialog";
+import {isFetchGetResponseOk} from '../fetch/fetch-get'
 
 export const BirdsPage = () => {
     const {
@@ -25,37 +26,39 @@ export const BirdsPage = () => {
         handleOpen: handleAddBirdOpen,
         handleClose: handleAddBirdClose,
     } = useDialogState()
-    const {data: birds} = useBirds()
+    const {data: birdsResponse} = useBirds()
 
-    if (birds === undefined) {
+    if (birdsResponse === undefined) {
+        return null
+    } else if (isFetchGetResponseOk(birdsResponse)) {
+        return (
+            <>
+                <Page title="Twocan">
+                    <Container maxWidth="md">
+                        <Box textAlign="center" mt={2}><Logo/></Box>
+                        <Typography variant="h4" align="center">Birds</Typography>
+                        <Box textAlign="right" my={2}>
+                            <Button
+                                color="primary"
+                                variant="contained"
+                                onClick={handleAddBirdOpen}>
+                                Add
+                            </Button>
+                        </Box>
+                        <Card>
+                            <List>
+                                {birdsResponse.data.map(bird => <BirdListItem key={bird.id} bird={bird}/>)}
+                            </List>
+                        </Card>
+                    </Container>
+                </Page>
+
+                <AddBirdDialog open={addBirdOpen} handleClose={handleAddBirdClose}/>
+            </>
+        )
+    } else {
         return null
     }
-
-    return (
-        <>
-            <Page title="Twocan">
-                <Container maxWidth="md">
-                    <Box textAlign="center" mt={2}><Logo/></Box>
-                    <Typography variant="h4" align="center">Birds</Typography>
-                    <Box textAlign="right" my={2}>
-                        <Button
-                            color="primary"
-                            variant="contained"
-                            onClick={handleAddBirdOpen}>
-                            Add
-                        </Button>
-                    </Box>
-                    <Card>
-                        <List>
-                            {birds.map(bird => <BirdListItem key={bird.id} bird={bird}/>)}
-                        </List>
-                    </Card>
-                </Container>
-            </Page>
-
-            <AddBirdDialog open={addBirdOpen} handleClose={handleAddBirdClose}/>
-        </>
-    )
 }
 
 type BirdListItemProps = {

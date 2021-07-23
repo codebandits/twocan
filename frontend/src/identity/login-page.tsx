@@ -1,20 +1,15 @@
 import {Box, Button, Card, CardContent, Container, TextField, Typography} from '@material-ui/core'
 import {Page} from '../layout/page'
-import React, {useCallback} from 'react'
+import React from 'react'
 import {useFormData} from '../form'
-import {useQueryClient} from 'react-query'
 import {Logo} from "../logo";
+import {useLogin} from './login'
 
 const initialValues = {emailAddress: ''}
 
 export const LoginPage = () => {
 
-    const queryClient = useQueryClient()
-    const login = useCallback((data: { emailAddress: string }) =>
-        fetch('/api/login', {
-            method: 'post',
-            body: JSON.stringify(data)
-        }).then(() => queryClient.invalidateQueries('session')), [queryClient])
+    const login = useLogin()
     const formData = useFormData({
         initialValues: initialValues,
         submit: login,

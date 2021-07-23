@@ -3,18 +3,18 @@ package io.twocan.identity.client
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
 import com.natpryce.hamkrest.hasSize
-import io.twocan.http.ApiResponse
+import io.twocan.http.GetResponse
 import io.twocan.http.hasInvalidatedCookie
 import io.twocan.http.setupTestServer
 import io.twocan.identity.Session
 import io.twocan.identity.SessionRequestContextLens
 import io.twocan.identity.User
+import io.twocan.serialization.Json.auto
 import org.http4k.cloudnative.env.Environment
 import org.http4k.core.*
 import org.http4k.core.cookie.cookie
 import org.http4k.core.cookie.invalidateCookie
 import org.http4k.filter.ServerFilters
-import org.http4k.format.KotlinxSerialization.auto
 import org.http4k.hamkrest.hasCookie
 import org.http4k.routing.bind
 import org.http4k.routing.routes
@@ -25,13 +25,13 @@ import java.util.*
 internal object SessionFilterTest : Spek({
     describe("SessionFilter") {
         val session = Session(
+            id = UUID.randomUUID(),
+            user = User(
                 id = UUID.randomUUID(),
-                user = User(
-                    id = UUID.randomUUID(),
-                    emailAddress = "test@example.com",
-                ),
+                emailAddress = "test@example.com",
+            ),
         )
-        val sessionApiResponseLens = Body.auto<ApiResponse<Session?>>().toLens()
+        val getSessionResponseBodyLens = Body.auto<GetResponse<Session?>>().toLens()
 
         var filtersCalled = false
         var requestToIdentityService: Request? = null
@@ -48,22 +48,26 @@ internal object SessionFilterTest : Spek({
         describe("when the session is valid") {
             val mockIdentityService = routes("/api/session" bind Method.GET to { request ->
                 requestToIdentityService = request
-                sessionApiResponseLens.inject(ApiResponse(session), Response(Status.OK))
+                getSessionResponseBodyLens.inject(GetResponse.Ok(session), Response(Status.OK))
             })
             val identityUriString = setupTestServer(mockIdentityService)
             val environment = Environment.Companion.from("identity.uri" to identityUriString)
             val contexts = RequestContexts()
             val sessionLens = SessionRequestContextLens(contexts = contexts)
             val app = ServerFilters.InitialiseRequestContext(contexts)
-                    .then(SessionFilter(sessionLens = sessionLens, environment = environment))
-                    .then { request ->
-                        filtersCalled = true
-                        sessionInContext = sessionLens(request)
-                        Response(Status.OK)
-                    }
+                .then(SessionFilter(sessionLens = sessionLens, environment = environment))
+                .then { request ->
+                    filtersCalled = true
+                    sessionInContext = sessionLens(request)
+                    Response(Status.OK)
+                }
 
             beforeEachTest {
                 response = app(Request(Method.GET, "/").cookie("session", "session-cookie"))
+            }
+
+            it("should work") {
+                getSessionResponseBodyLens.inject(GetResponse.Ok(session), Response(Status.OK))
             }
 
             it("should continue the filter chain") {
@@ -86,19 +90,19 @@ internal object SessionFilterTest : Spek({
         describe("when the session is not set") {
             val mockIdentityService = routes("/api/session" bind Method.GET to { request ->
                 requestToIdentityService = request
-                sessionApiResponseLens.inject(ApiResponse(null), Response(Status.OK))
+                getSessionResponseBodyLens.inject(GetResponse.Ok(null), Response(Status.OK))
             })
             val identityUriString = setupTestServer(mockIdentityService)
             val environment = Environment.Companion.from("identity.uri" to identityUriString)
             val contexts = RequestContexts()
             val sessionLens = SessionRequestContextLens(contexts = contexts)
             val app = ServerFilters.InitialiseRequestContext(contexts)
-                    .then(SessionFilter(sessionLens = sessionLens, environment = environment))
-                    .then { request ->
-                        filtersCalled = true
-                        sessionInContext = sessionLens(request)
-                        Response(Status.OK)
-                    }
+                .then(SessionFilter(sessionLens = sessionLens, environment = environment))
+                .then { request ->
+                    filtersCalled = true
+                    sessionInContext = sessionLens(request)
+                    Response(Status.OK)
+                }
 
             beforeEachTest {
                 response = app(Request(Method.GET, "/"))
@@ -124,19 +128,19 @@ internal object SessionFilterTest : Spek({
         describe("when the session is invalid") {
             val mockIdentityService = routes("/api/session" bind Method.GET to { request ->
                 requestToIdentityService = request
-                sessionApiResponseLens.inject(ApiResponse(null), Response(Status.OK).invalidateCookie("session"))
+                getSessionResponseBodyLens.inject(GetResponse.Ok(null), Response(Status.OK).invalidateCookie("session"))
             })
             val identityUriString = setupTestServer(mockIdentityService)
             val environment = Environment.Companion.from("identity.uri" to identityUriString)
             val contexts = RequestContexts()
             val sessionLens = SessionRequestContextLens(contexts = contexts)
             val app = ServerFilters.InitialiseRequestContext(contexts)
-                    .then(SessionFilter(sessionLens = sessionLens, environment = environment))
-                    .then { request ->
-                        filtersCalled = true
-                        sessionInContext = sessionLens(request)
-                        Response(Status.OK)
-                    }
+                .then(SessionFilter(sessionLens = sessionLens, environment = environment))
+                .then { request ->
+                    filtersCalled = true
+                    sessionInContext = sessionLens(request)
+                    Response(Status.OK)
+                }
 
             beforeEachTest {
                 response = app(Request(Method.GET, "/").cookie("session", "session-cookie"))

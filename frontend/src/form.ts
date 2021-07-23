@@ -2,6 +2,7 @@ import {FormEventHandler, useCallback, useEffect, useMemo, useRef, useState} fro
 import {StandardTextFieldProps} from '@material-ui/core/TextField/TextField'
 import {ButtonProps} from '@material-ui/core'
 import {makeCancelable} from './promise'
+import {FetchSubmitResponse} from './fetch/fetch-submit'
 
 type ValueType = string | number | null
 
@@ -9,9 +10,9 @@ type ValuesType = {
     [key: string]: ValueType
 }
 
-type Config<Values extends ValuesType, Result> = {
+type Config<Values extends ValuesType> = {
     initialValues: Values
-    submit: (values: Values) => Promise<Result>
+    submit: (values: Values) => Promise<FetchSubmitResponse<Values>>
     onSuccessCallback?: () => void
 }
 
@@ -35,7 +36,7 @@ type FormData<Values extends ValuesType> = {
     onSubmit: FormEventHandler<HTMLFormElement>
 }
 
-export const useFormData = <Values extends ValuesType, Result>(config: Config<Values, Result>): FormData<Values> => {
+export const useFormData = <Values extends ValuesType>(config: Config<Values>): FormData<Values> => {
     const {submit, initialValues, onSuccessCallback} = config
     useLogErrorWhenUpdate(submit, 'The submit configuration of useFormData changed. This is a bug.')
     useLogErrorWhenUpdate(initialValues, 'The initialValues configuration of useFormData changed. This is a bug.')

@@ -1,16 +1,8 @@
-import {useQueryClient} from "react-query";
-import {useCallback} from "react";
+import {useFetchSubmit} from "../fetch/fetch-submit";
 
 type Request = {
     firstName: string
     lastName: string
 }
 
-export const useAddBird = () => {
-    const queryClient = useQueryClient()
-    return useCallback((data: Request) =>
-        fetch('/api/birds', {
-            method: 'post',
-            body: JSON.stringify(data)
-        }).then(() => queryClient.invalidateQueries('birds')), [queryClient])
-}
+export const useAddBird = () => useFetchSubmit<Request>('/api/birds', {invalidateQueries: ['birds']})

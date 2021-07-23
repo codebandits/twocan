@@ -6,8 +6,9 @@ import {BirdsPage} from './birds/birds-page'
 import {QueryClient, QueryClientProvider} from 'react-query'
 import {BrowserRouter, Redirect, Route, Switch} from 'react-router-dom'
 import {HomePage} from './home-page'
+import {isFetchGetResponseOk} from './fetch/fetch-get'
 
-const queryClient = new QueryClient()
+export const queryClient = new QueryClient()
 
 export const App = () => {
     return (
@@ -22,23 +23,28 @@ export const App = () => {
 }
 
 const Routes = () => {
-    const {data: session} = useSession()
-    if (session === undefined) {
+    const {data: sessionResponse} = useSession()
+
+    if (sessionResponse === undefined) {
         return null
-    } else if (session) {
-        return (
-            <Switch>
-                <Route path="/birds" component={BirdsPage}/>
-                <Redirect to="/birds"/>
-            </Switch>
-        )
+    } else if (isFetchGetResponseOk(sessionResponse)) {
+        if (sessionResponse.data) {
+            return (
+                <Switch>
+                    <Route path="/birds" component={BirdsPage}/>
+                    <Redirect to="/birds"/>
+                </Switch>
+            )
+        } else {
+            return (
+                <Switch>
+                    <Route path="/login" component={LoginPage}/>
+                    <Route exact path="/" component={HomePage}/>
+                    <Redirect to="/"/>
+                </Switch>
+            )
+        }
     } else {
-        return (
-            <Switch>
-                <Route path="/login" component={LoginPage}/>
-                <Route exact path="/" component={HomePage}/>
-                <Redirect to="/"/>
-            </Switch>
-        )
+        return null
     }
 }
