@@ -1,8 +1,13 @@
 package io.twocan.birds
 
+import io.konform.validation.Invalid
+import io.konform.validation.Valid
+import io.konform.validation.Validation
+import io.konform.validation.jsonschema.minLength
 import io.twocan.http.SubmitResponse
 import io.twocan.identity.SessionLens
 import io.twocan.serialization.Json.auto
+import io.twocan.validation.toBadRequestErrors
 import org.http4k.core.Body
 import org.http4k.core.Method
 import org.http4k.core.Response
@@ -14,24 +19,40 @@ import java.util.*
 internal object CreateBird {
     private val requestBodyLens = Body.auto<RequestBody>().toLens()
     private val submitResponseLens = Body.auto<SubmitResponse>().toLens()
+    private val validator = Validation<RequestBody> {
+        RequestBody::firstName {
+            minLength(1) hint "required"
+        }
+    }
+
     operator fun invoke(sessionLens: SessionLens): RoutingHttpHandler {
         return "/api/birds" bind Method.POST to { request ->
             val requestBody = requestBodyLens(request)
-            val bird = Bird(
-                id = UUID.randomUUID(),
-                firstName = requestBody.firstName,
-                lastName = requestBody.lastName
-            )
-            val session = sessionLens(request)
-            if (session != null) {
-                val userId = session.user.id
-                val userBirds = birdsByUserIdRepository.getOrDefault(userId, emptyMap()).plus(bird.id to bird)
-                birdsByUserIdRepository[userId] = userBirds
+            when (val validationResult = validator(requestBody)) {
+                is Invalid -> {
+                    submitResponseLens.inject(
+                        validationResult.toBadRequestErrors(),
+                        Response(Status.BAD_REQUEST)
+                    )
+                }
+                is Valid -> {
+                    val bird = Bird(
+                        id = UUID.randomUUID(),
+                        firstName = requestBody.firstName,
+                        lastName = requestBody.lastName
+                    )
+                    val session = sessionLens(request)
+                    if (session != null) {
+                        val userId = session.user.id
+                        val userBirds = birdsByUserIdRepository.getOrDefault(userId, emptyMap()).plus(bird.id to bird)
+                        birdsByUserIdRepository[userId] = userBirds
+                    }
+                    submitResponseLens.inject(
+                        SubmitResponse.Created(bird.id),
+                        Response(Status.CREATED)
+                    )
+                }
             }
-            submitResponseLens.inject(
-                SubmitResponse.Created(bird.id),
-                Response(Status.CREATED)
-            )
         }
     }
 

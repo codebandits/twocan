@@ -3,7 +3,7 @@ package io.twocan.http
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import java.util.*
 
-//typealias ResponseErrors = Map<String, String>
+typealias ResponseErrors = Map<String, String>
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "@type")
 sealed class SubmitResponse {
@@ -33,10 +33,10 @@ sealed class SubmitResponse {
         override val status = "CREATED"
     }
 
-//    data class BadRequestErrors(val errors: ResponseErrors) : SubmitResponse() {
-//        override val status = "BAD_REQUEST"
-//    }
-//
+    data class BadRequestErrors(val errors: ResponseErrors) : SubmitResponse() {
+        override val status = "BAD_REQUEST"
+    }
+
 //    data class BadRequestMessage(val message: String) : SubmitResponse() {
 //        override val status = "BAD_REQUEST"
 //    }

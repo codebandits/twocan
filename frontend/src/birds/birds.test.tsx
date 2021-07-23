@@ -78,5 +78,43 @@ describe('birds', () => {
                 expect(within(dialog).getByLabelText('Last Name')).toHaveValue('')
             })
         })
+
+        describe('when the user receives errors creating a new bird', () => {
+            let addBirdEndpoint: MockedEndpoint
+
+            beforeEach(async () => {
+                const main = await screen.findByRole('main')
+                const addButton = within(main).getByRole('button', {name: 'Add'})
+                userEvent.click(addButton)
+                const dialog = await screen.findByRole('dialog')
+                userEvent.type(within(dialog).getByLabelText('First Name'), 'Samuel')
+                userEvent.type(within(dialog).getByLabelText('Last Name'), 'Clemens')
+
+                const errors = {firstName: 'bad first name', lastName: 'bad last name'}
+                addBirdEndpoint = await testServer.post('/api/birds').thenJson(400, {
+                    status: 'BAD_REQUEST',
+                    errors: errors
+                })
+                userEvent.click(within(dialog).getByRole('button', {name: 'Add'}))
+                await waitFor(async () => {
+                    const addBirdRequests = await addBirdEndpoint.getSeenRequests()
+                    expect(addBirdRequests).toHaveLength(1)
+                })
+            })
+
+            it('should not reset the add bird dialog form', async () => {
+                const dialog = await screen.findByRole('dialog')
+                expect(within(dialog).getByLabelText('First Name')).toHaveValue('Samuel')
+                expect(within(dialog).getByLabelText('Last Name')).toHaveValue('Clemens')
+            })
+
+            it('should display the errors', async () => {
+                await waitFor(async () => {
+                    const dialog = await screen.findByRole('dialog')
+                    expect(within(dialog).getByTestId('firstName-helper-text')).toHaveTextContent('bad first name')
+                    expect(within(dialog).getByTestId('lastName-helper-text')).toHaveTextContent('bad last name')
+                })
+            })
+        })
     })
 })

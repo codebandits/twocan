@@ -50,6 +50,9 @@ const isFetchSubmitResponseCreated = <RequestType extends Request | void>(respon
     return response.status === 'CREATED'
 }
 
-const isFetchSubmitResponseSuccess = <RequestType extends Request | void>(response: FetchSubmitResponse<RequestType>): response is ResponseAccepted | ResponseCreated => {
+export const isFetchSubmitResponseSuccess = <RequestType extends Request | void>(response: FetchSubmitResponse<RequestType>): response is ResponseAccepted | ResponseCreated => {
     return isFetchSubmitResponseAccepted(response) || isFetchSubmitResponseCreated(response)
+}
+export const isFetchSubmitResponseBadRequestErrors = <RequestType extends Request | void>(response: FetchSubmitResponse<RequestType>): response is ResponseBadRequestErrors<RequestType extends Request ? RequestType : never> => {
+    return response.status === 'BAD_REQUEST' && 'errors' in response
 }

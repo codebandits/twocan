@@ -2,7 +2,12 @@ import {FormEventHandler, useCallback, useEffect, useMemo, useRef, useState} fro
 import {StandardTextFieldProps} from '@material-ui/core/TextField/TextField'
 import {ButtonProps} from '@material-ui/core'
 import {makeCancelable} from './promise'
-import {FetchSubmitResponse} from './fetch/fetch-submit'
+import {
+    FetchSubmitResponse,
+    isFetchSubmitResponseBadRequestErrors,
+    isFetchSubmitResponseSuccess
+} from './fetch/fetch-submit'
+import {RequestErrors} from "./fetch/fetch";
 
 type ValueType = string | number | null
 
@@ -19,6 +24,7 @@ type Config<Values extends ValuesType> = {
 type Field<ValueType> = {
     onChange: (value: ValueType) => void
     textFieldProps: {
+        FormHelperTextProps: StandardTextFieldProps['FormHelperTextProps']
         helperText: StandardTextFieldProps['helperText']
         onChange: StandardTextFieldProps['onChange']
         value: StandardTextFieldProps['value']
@@ -41,6 +47,7 @@ export const useFormData = <Values extends ValuesType>(config: Config<Values>): 
     useLogErrorWhenUpdate(submit, 'The submit configuration of useFormData changed. This is a bug.')
     useLogErrorWhenUpdate(initialValues, 'The initialValues configuration of useFormData changed. This is a bug.')
     const [values, setValues] = useState<Values>(initialValues)
+    const [errors, setErrors] = useState<RequestErrors<Values>>({})
     const [submitting, setSubmitting] = useState(false)
 
     const onSubmit: FormEventHandler<HTMLFormElement> = useCallback(event => {
@@ -50,12 +57,18 @@ export const useFormData = <Values extends ValuesType>(config: Config<Values>): 
 
     useEffect(() => {
         if (submitting) {
+            setErrors({})
             const cancelable = makeCancelable(submit(values))
             cancelable.promise
-                .then(() => {
+                .then(response => {
                     setSubmitting(false)
-                    setValues(initialValues)
-                    onSuccessCallback?.()
+                    if (isFetchSubmitResponseSuccess(response)) {
+                        setValues(initialValues)
+                        onSuccessCallback?.()
+                    } else if (isFetchSubmitResponseBadRequestErrors(response)) {
+                        setErrors(response.errors)
+                    }
+                    return response
                 })
                 .catch(() => setSubmitting(false))
             return () => {
@@ -68,20 +81,29 @@ export const useFormData = <Values extends ValuesType>(config: Config<Values>): 
     const fields: Fields<Values> = useMemo(() => {
         return Object.entries(values)
             .reduce<Partial<Fields<Values>>>((acc, [key, value]) => {
-                const onChange = (newValue: typeof value) => setValues(prev => ({...prev, [key]: newValue}))
+                const onChange = (newValue: typeof value) => {
+                    if (!submitting) {
+                        setValues(prev => ({...prev, [key]: newValue}))
+                    }
+                }
                 return {
                     ...acc,
                     [key]: {
                         onChange: onChange,
                         textFieldProps: {
                             onChange: event => onChange(event.target.value),
-                            helperText: '\u200b',
+                            FormHelperTextProps: {
+                                'data-testid': `${key}-helper-text`,
+                            },
+                            disabled: submitting,
+                            error: errors[key] !== undefined,
+                            helperText: errors[key] || '\u200b',
                             value: value,
                         },
                     },
                 }
             }, {}) as Fields<Values>
-    }, [values])
+    }, [errors, submitting, values])
 
     const submitButtonProps: ButtonProps = useMemo(() => {
         return {

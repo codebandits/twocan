@@ -10,4 +10,5 @@ object Versions {
     const val JsonPath = "2.6.0"
     const val Mockk = "1.12.0"
     const val Spek = "2.0.15"
+    const val Konform = "0.3.0"
 }
