@@ -7,7 +7,9 @@ import io.konform.validation.jsonschema.minLength
 import io.twocan.http.SubmitResponse
 import io.twocan.identity.SessionLens
 import io.twocan.serialization.Json.auto
+import io.twocan.validation.Transformation
 import io.twocan.validation.toBadRequestErrors
+import io.twocan.validation.trim
 import org.http4k.core.Body
 import org.http4k.core.Method
 import org.http4k.core.Response
@@ -19,17 +21,19 @@ import java.util.*
 internal object CreateBird {
     private val requestBodyLens = Body.auto<RequestBody>().toLens()
     private val submitResponseLens = Body.auto<SubmitResponse>().toLens()
+    private val transformer = Transformation<RequestBody> {
+        RequestBody::firstName { trim() }
+        RequestBody::lastName { trim() }
+    }
     private val validator = Validation<RequestBody> {
-        RequestBody::firstName {
-            minLength(1) hint "required"
-        }
+        RequestBody::firstName { minLength(1) hint "required" }
+        RequestBody::lastName { minLength(1) hint "required" }
     }
 
     operator fun invoke(sessionLens: SessionLens): RoutingHttpHandler {
         return "/api/birds" bind Method.POST to { request ->
             val requestBody = requestBodyLens(request)
-            val transformedRequestBody = requestBody.copy(firstName = requestBody.firstName.trim(), lastName = requestBody.lastName.trim())
-            when (val validationResult = validator(transformedRequestBody)) {
+            when (val validationResult = validator(transformer(requestBody))) {
                 is Invalid -> {
                     submitResponseLens.inject(
                         validationResult.toBadRequestErrors(),

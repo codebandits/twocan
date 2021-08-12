@@ -48,44 +48,65 @@ internal object BirdsValidationTest : Spek({
             }
         }
 
-        describe("when the first name is blank") {
-            val invalidRequestBody = validRequestBody.copy(firstName = "")
-            val request = createBirdRequestBodyLens(invalidRequestBody, Request(Method.POST, "/api/birds"))
+        describe("firstName") {
+            describe("when the firstName is blank") {
+                val invalidRequestBody = validRequestBody.copy(firstName = "")
+                val request = createBirdRequestBodyLens(invalidRequestBody, Request(Method.POST, "/api/birds"))
 
-            it("should return errors") {
-                assertThat(
-                    subject(request), hasBody(
-                        submitResponseLens, isA(
-                            has(SubmitResponse.BadRequestErrors::errors, hasKeyValue("firstName", "required"))
-                        )
-                    )
-                )
+                it("should return errors") {
+                    assertThat(subject(request), hasBody(submitResponseLens, isA(has(SubmitResponse.BadRequestErrors::errors, hasKeyValue("firstName", "required")))))
+                }
+            }
+
+            describe("when the firstName contains only whitespace") {
+                val invalidRequestBody = validRequestBody.copy(firstName = " ")
+                val request = createBirdRequestBodyLens(invalidRequestBody, Request(Method.POST, "/api/birds"))
+
+                it("should return errors") {
+                    assertThat(subject(request), hasBody(submitResponseLens, isA(has(SubmitResponse.BadRequestErrors::errors, hasKeyValue("firstName", "required")))))
+                }
+            }
+
+            describe("when the firstName contains leading/trailing whitespace") {
+                val requestBody = validRequestBody.copy(firstName = " ${validRequestBody.firstName}  ")
+                val request = createBirdRequestBodyLens(requestBody, Request(Method.POST, "/api/birds"))
+
+                it("should trim the whitespace") {
+                    val birdId = assertIsA<SubmitResponse.Created>(submitResponseLens(subject(request))).id
+                    val getBirdRequest = Request(Method.GET, "/api/birds/${birdId}")
+                    assertThat(subject(getBirdRequest), hasBody(getBirdResponseLens, isA(has(GetResponse.Ok<Bird>::data, has(Bird::firstName, equalTo(validRequestBody.firstName))))))
+                }
             }
         }
 
-        describe("when the first name contains only whitespace") {
-            val invalidRequestBody = validRequestBody.copy(firstName = " ")
-            val request = createBirdRequestBodyLens(invalidRequestBody, Request(Method.POST, "/api/birds"))
+        describe("lastName") {
+            describe("when the lastName is blank") {
+                val invalidRequestBody = validRequestBody.copy(lastName = "")
+                val request = createBirdRequestBodyLens(invalidRequestBody, Request(Method.POST, "/api/birds"))
 
-            it("should return errors") {
-                assertThat(
-                    subject(request), hasBody(
-                        submitResponseLens, isA(
-                            has(SubmitResponse.BadRequestErrors::errors, hasKeyValue("firstName", "required"))
-                        )
-                    )
-                )
+                it("should return errors") {
+                    assertThat(subject(request), hasBody(submitResponseLens, isA(has(SubmitResponse.BadRequestErrors::errors, hasKeyValue("lastName", "required")))))
+                }
             }
-        }
 
-        describe("when the first name contains leading/trailing whitespace") {
-            val requestBody = validRequestBody.copy(firstName = " " + "Mark" + "  ")
-            val request = createBirdRequestBodyLens(requestBody, Request(Method.POST, "/api/birds"))
+            describe("when the lastName contains only whitespace") {
+                val invalidRequestBody = validRequestBody.copy(lastName = " ")
+                val request = createBirdRequestBodyLens(invalidRequestBody, Request(Method.POST, "/api/birds"))
 
-            it("should trim the whitespace") {
-                val birdId = assertIsA<SubmitResponse.Created>(submitResponseLens(subject(request))).id
-                val getBirdRequest = Request(Method.GET, "/api/birds/${birdId}")
-                assertThat(subject(getBirdRequest), hasBody(getBirdResponseLens, isA(has(GetResponse.Ok<Bird>::data, has(Bird::firstName, equalTo("Mark"))))))
+                it("should return errors") {
+                    assertThat(subject(request), hasBody(submitResponseLens, isA(has(SubmitResponse.BadRequestErrors::errors, hasKeyValue("lastName", "required")))))
+                }
+            }
+
+            describe("when the lastName contains leading/trailing whitespace") {
+                val requestBody = validRequestBody.copy(lastName = " ${validRequestBody.lastName}  ")
+                val request = createBirdRequestBodyLens(requestBody, Request(Method.POST, "/api/birds"))
+
+                it("should trim the whitespace") {
+                    val birdId = assertIsA<SubmitResponse.Created>(submitResponseLens(subject(request))).id
+                    val getBirdRequest = Request(Method.GET, "/api/birds/${birdId}")
+                    assertThat(subject(getBirdRequest), hasBody(getBirdResponseLens, isA(has(GetResponse.Ok<Bird>::data, has(Bird::lastName, equalTo(validRequestBody.lastName))))))
+                }
             }
         }
     }
