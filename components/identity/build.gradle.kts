@@ -8,6 +8,7 @@ dependencies {
 
     implementation(project(":libs:http-support"))
     implementation(project(":libs:logging-support"))
+    implementation(project(":libs:validation-support"))
 
     testImplementation(project(":libs:test-support"))
     testImplementation(project(":libs:http-test-support"))

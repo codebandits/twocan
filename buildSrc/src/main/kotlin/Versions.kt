@@ -11,4 +11,5 @@ object Versions {
     const val Mockk = "1.12.0"
     const val Spek = "2.0.15"
     const val Konform = "0.3.0"
+    const val JakartaMail = "1.6.7"
 }
