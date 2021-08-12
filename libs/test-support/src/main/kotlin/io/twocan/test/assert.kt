@@ -3,6 +3,8 @@ package io.twocan.test
 import com.natpryce.hamkrest.MatchResult
 import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.describe
+import com.natpryce.hamkrest.isWithin
+import java.time.Instant
 
 inline fun <reified T> assertIsA(actual: Any?): T {
     when (actual) {
@@ -31,4 +33,12 @@ fun <K, V> hasKeyValue(key: K, value: V): Matcher<Map<K, V>> = object : Matcher.
 
     override val description: String get() = "contains the key ${describe(key)} with the value ${describe(value)}"
     override val negatedDescription: String get() = "does not contain the key ${describe(key)} with the value ${describe(value)}"
+}
+
+fun isNowish(): Matcher<Instant> {
+    val now = Instant.now()
+    return isWithin(object : ClosedRange<Instant> {
+        override val endInclusive = now
+        override val start = now.minusSeconds(1)
+    })
 }

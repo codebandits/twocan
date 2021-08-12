@@ -61,8 +61,10 @@ internal object BirdsTest : Spek({
                 assertThat(createBirdResponseBody, isA<SubmitResponse.Created>())
                 val birdId = assertIsA<SubmitResponse.Created>(createBirdResponseBody).id
                 val getBirdRequest = Request(Method.GET, "/api/birds/${birdId}")
-                val expectedBird = Bird(id = birdId, firstName = "Mark", lastName = "Twain")
-                assertThat(subject(getBirdRequest), hasBody(getBirdResponseLens, isA(has(GetResponse.Ok<Bird>::data, equalTo(expectedBird)))))
+                assertThat(
+                    subject(getBirdRequest),
+                    hasBody(getBirdResponseLens, isA(has(GetResponse.Ok<Bird>::data, has(Bird::id, equalTo(birdId)) and has(Bird::firstName, equalTo("Mark")) and has(Bird::lastName, equalTo("Twain")))))
+                )
             }
 
             it("should be included in the list of birds for the user who created") {
@@ -70,8 +72,10 @@ internal object BirdsTest : Spek({
                 val createBirdResponseBody = submitResponseLens(createBirdResponse)
                 val birdId = assertIsA<SubmitResponse.Created>(createBirdResponseBody).id
                 val getBirdsRequest = Request(Method.GET, "/api/birds")
-                val expectedBird = Bird(id = birdId, firstName = "Mark", lastName = "Twain")
-                assertThat(subject(getBirdsRequest), hasBody(getBirdsResponseLens, isA(has(GetResponse.Ok<List<Bird>>::data, hasElement(expectedBird)))))
+                assertThat(
+                    subject(getBirdsRequest),
+                    hasBody(getBirdsResponseLens, isA(has(GetResponse.Ok<List<Bird>>::data, anyElement(has(Bird::id, equalTo(birdId)) and has(Bird::firstName, equalTo("Mark")) and has(Bird::lastName, equalTo("Twain"))))))
+                )
             }
 
             it("should not be able to be retrieved by anonymous users") {

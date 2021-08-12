@@ -44,13 +44,14 @@ internal object CreateBird {
                     val bird = Bird(
                         id = UUID.randomUUID(),
                         firstName = validationResult.value.firstName,
-                        lastName = validationResult.value.lastName
+                        lastName = validationResult.value.lastName,
+                        lastFlight = null,
                     )
                     val session = sessionLens(request)
                     if (session != null) {
                         val userId = session.user.id
-                        val userBirds = birdsByUserIdRepository.getOrDefault(userId, emptyMap()).plus(bird.id to bird)
-                        birdsByUserIdRepository[userId] = userBirds
+                        val userBirds = birdsByUserIdRepository.getOrDefault(userId, emptyMap())
+                        birdsByUserIdRepository[userId] = userBirds.plus(bird.id to bird)
                     }
                     submitResponseLens.inject(
                         SubmitResponse.Created(bird.id),
