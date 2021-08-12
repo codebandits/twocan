@@ -45,11 +45,15 @@ export const BirdsPage = () => {
                                 Add
                             </Button>
                         </Box>
-                        <Card>
-                            <List>
-                                {birdsResponse.data.map(bird => <BirdListItem key={bird.id} bird={bird}/>)}
-                            </List>
-                        </Card>
+                        {birdsResponse.data.length > 0 ? (
+                            <Card>
+                                <List>
+                                    {birdsResponse.data.map(bird => <BirdListItem key={bird.id} bird={bird}/>)}
+                                </List>
+                            </Card>
+                        ) : (
+                            <Typography align="center">Don't you know any birds? Jump out of the nest and add them!</Typography>
+                        )}
                     </Container>
                 </Page>
 

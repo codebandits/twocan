@@ -8,7 +8,7 @@ import userEvent from "@testing-library/user-event";
 import {MockedEndpoint} from "mockttp";
 
 describe('birds', () => {
-    describe('when a user is logged in', () => {
+    describe('when a user with birds is logged in', () => {
         const session: Session = {
             id: 'session-1',
             user: {
@@ -115,6 +115,40 @@ describe('birds', () => {
                     expect(within(dialog).getByTestId('lastName-helper-text')).toHaveTextContent('bad last name')
                 })
             })
+        })
+    })
+
+    describe('when a user with no birds is logged', () => {
+        const session: Session = {
+            id: 'session-1',
+            user: {
+                id: 'user-1',
+                firstName: 'Toucan',
+                lastName: 'Sam',
+            }
+        }
+
+        const birds: Bird[] = []
+
+        beforeEach(async () => {
+            await testServer.get('/api/session').thenJson(200, {status: 'OK', data: session})
+            await testServer.get('/api/birds').thenJson(200, {status: 'OK', data: birds})
+            await render(<App/>)
+        })
+
+        it('should display the birds page', async () => {
+            const main = await screen.findByRole('main')
+            within(main).getByRole('heading', {name: 'Birds'})
+        })
+
+        it('should display not display a list', async () => {
+            const main = await screen.findByRole('main')
+            expect(within(main).queryByRole('list')).toBeNull()
+        })
+
+        it('should suggest the user adds a bird', async () => {
+            const main = await screen.findByRole('main')
+            within(main).getByText('Don\'t you know any birds? Jump out of the nest and add them!')
         })
     })
 })
