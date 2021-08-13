@@ -2,23 +2,12 @@ import React from 'react'
 import Typography from '@material-ui/core/Typography'
 import {Page} from '../layout/page'
 import {Logo} from '../logo'
-import {
-    Avatar,
-    Box,
-    Button,
-    Card,
-    Container,
-    List,
-    ListItem,
-    ListItemAvatar,
-    ListItemText,
-    SvgIcon
-} from '@material-ui/core'
-import {ReactComponent as BirdIcon} from './bird.svg'
-import {Bird, useBirds} from "./bird";
+import {Box, Button, Container} from '@material-ui/core'
+import {useBirds} from "./bird";
 import {useDialogState} from "../dialog";
 import {AddBirdDialog} from "./add-bird-dialog";
 import {isFetchGetResponseOk} from '../fetch/fetch-get'
+import {BirdList} from './bird-list'
 
 export const BirdsPage = () => {
     const {
@@ -45,15 +34,7 @@ export const BirdsPage = () => {
                                 Add
                             </Button>
                         </Box>
-                        {birdsResponse.data.length > 0 ? (
-                            <Card>
-                                <List>
-                                    {birdsResponse.data.map(bird => <BirdListItem key={bird.id} bird={bird}/>)}
-                                </List>
-                            </Card>
-                        ) : (
-                            <Typography align="center">Don't you know any birds? Jump out of the nest and add them!</Typography>
-                        )}
+                        <BirdList birds={birdsResponse.data}/>
                     </Container>
                 </Page>
 
@@ -64,22 +45,3 @@ export const BirdsPage = () => {
         return null
     }
 }
-
-type BirdListItemProps = {
-    bird: Bird
-}
-
-const BirdListItem = ({bird}: BirdListItemProps) => (
-    <ListItem divider>
-        <ListItemAvatar>
-            <Avatar>
-                <SvgIcon>
-                    <BirdIcon/>
-                </SvgIcon>
-            </Avatar>
-        </ListItemAvatar>
-        <ListItemText
-            primary={`${bird.firstName} ${bird.lastName}`.trim()}
-            secondary="come fly with me"/>
-    </ListItem>
-)

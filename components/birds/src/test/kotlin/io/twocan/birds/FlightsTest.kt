@@ -17,7 +17,6 @@ import org.http4k.routing.bind
 import org.http4k.routing.routes
 import org.spekframework.spek2.Spek
 import org.spekframework.spek2.style.specification.describe
-import java.time.Instant
 import java.util.*
 
 internal object FlightsTest : Spek({
@@ -71,7 +70,7 @@ internal object FlightsTest : Spek({
 
         describe("when a flight has been created") {
             beforeEachTest {
-                val requestBody = CreateFlight.RequestBody(bird = birdId1)
+                val requestBody = CreateFlight.RequestBody(birdId = birdId1)
                 val request = createFlightRequestBodyLens(requestBody, Request(Method.POST, "/api/flights"))
                 val createFlightResponse = subject(request)
                 val createFlightResponseBody = submitResponseLens(createFlightResponse)

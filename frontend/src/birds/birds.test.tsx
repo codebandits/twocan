@@ -42,6 +42,29 @@ describe('birds', () => {
             assertDefined(within(main).getByText('Huck Finn').closest<HTMLElement>('li'))
         })
 
+        describe('when the user adds a new flight for a bird', () => {
+            let addFlightEndpoint: MockedEndpoint
+
+            beforeEach(async () => {
+                const main = await screen.findByRole('main')
+                const birdItem = assertDefined(within(main).getByText('Mark Twain').closest<HTMLElement>('li'))
+                const flightButton = within(birdItem).getByRole('button', {name: 'flight'})
+
+                addFlightEndpoint = await testServer.post('/api/flights').thenJson(200, {status: 'CREATED', id: '88'})
+                userEvent.click(flightButton)
+            })
+
+            it('should send an add flight request', async () => {
+                await waitFor(async () => {
+                    const addFlightRequests = await addFlightEndpoint.getSeenRequests()
+                    expect(addFlightRequests).toHaveLength(1)
+                    expect(addFlightRequests[0].body.json).toEqual({
+                        birdId: 'bird-1',
+                    })
+                })
+            })
+        })
+
         describe('when the user creates a new bird', () => {
             let addBirdEndpoint: MockedEndpoint
 

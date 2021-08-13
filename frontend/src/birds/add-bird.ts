@@ -1,4 +1,4 @@
-import {useFetchSubmit} from "../fetch/fetch-submit";
+import {useFetchSubmit} from '../fetch/fetch-submit'
 
 type Request = {
     firstName: string
