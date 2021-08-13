@@ -19,9 +19,9 @@ describe('birds', () => {
         }
 
         const birds: Bird[] = [
-            {id: 'bird-1', firstName: 'Mark', lastName: 'Twain'},
-            {id: 'bird-2', firstName: 'Tom', lastName: 'Sawyer'},
-            {id: 'bird-3', firstName: 'Huck', lastName: 'Finn'},
+            {id: 'bird-1', firstName: 'Mark', lastName: 'Twain', lastFlight: null},
+            {id: 'bird-2', firstName: 'Tom', lastName: 'Sawyer', lastFlight: null},
+            {id: 'bird-3', firstName: 'Huck', lastName: 'Finn', lastFlight: null},
         ]
 
         beforeEach(async () => {

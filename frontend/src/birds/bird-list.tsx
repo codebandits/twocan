@@ -54,7 +54,7 @@ const BirdListItem = ({bird}: BirdListItemProps) => {
                 primary={`${bird.firstName} ${bird.lastName}`.trim()}
                 secondary="come fly with me"/>
             <ListItemSecondaryAction>
-                <IconButton edge="end" aria-label="flight" onClick={onAddFlight}>
+                <IconButton edge="end" aria-label="flight" color="primary" onClick={onAddFlight}>
                     <SvgIcon>
                         <FlightIcon/>
                     </SvgIcon>

@@ -17,6 +17,7 @@ internal object GetBirds {
             val birds = when (val session = sessionLens(request)) {
                 null -> emptyList()
                 else -> birdsByUserIdRepository.getOrDefault(session.user.id, emptyMap()).values.toList()
+                    .sortedWith(compareBy({ it.lastFlight }, { "${it.firstName} ${it.lastFlight}" }))
             }
             getBirdsResponseBodyLens.inject(
                 GetResponse.Ok(birds),

@@ -40,7 +40,7 @@ object SessionValidationTest : Spek({
         describe("when a user authenticates with a valid email address containing leading/trailing whitespace") {
             val emailAddress = "bird@example.com"
             val loginRequest = loginRequestBodyLens(
-                Login.RequestBody(emailAddress = """ $emailAddress """),
+                Login.RequestBody(emailAddress = " $emailAddress "),
                 Request(Method.POST, "/api/login"),
             )
             val loginResponse = subject(loginRequest)
