@@ -1,5 +1,6 @@
 package io.twocan.birds
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import java.time.Instant
 import java.util.*
 
@@ -9,5 +10,6 @@ data class Bird(
     val lastName: String,
     val lastFlight: Instant?,
 ) {
-    val name get() = "$firstName $lastName"
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    val name = "$firstName $lastName"
 }
