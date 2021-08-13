@@ -8,4 +8,6 @@ data class Bird(
     val firstName: String,
     val lastName: String,
     val lastFlight: Instant?,
-)
+) {
+    val name get() = "$firstName $lastName"
+}
