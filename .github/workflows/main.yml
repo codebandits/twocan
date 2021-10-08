@@ -1,0 +1,158 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+env:
+  REGISTRY: us-central1-docker.pkg.dev
+  REPOSITORY_BASE: us-central1-docker.pkg.dev/tools-275701/twocan-gha
+jobs:
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.4.1
+        with:
+          node-version: 15.x
+          check-latest: true
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm install
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+      - name: Prepare Frontend Container Artiacts
+        run: |
+          mkdir build-frontend-container
+          cp -a frontend/build build-frontend-container/build
+          cp -a frontend/Dockerfile build-frontend-container/
+          cp -a frontend/nginx.conf build-frontend-container/
+      - name: Registry Login
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: _json_key
+          password: ${{ secrets.GCP }}
+      - name: Build and Push Frontend Container
+        id: push
+        uses: docker/build-push-action@v2
+        with:
+          context: build-frontend-container
+          push: true
+          tags: ${{ env.REPOSITORY_BASE }}/frontend
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: '16'
+      - name: Build Jar
+        run: ./gradlew :server:shadowJar
+      - name: Prepare Server Container Artiacts
+        run: |
+          mkdir build-server-container
+          cp -a server/build/libs/twocan.server.jar build-server-container/app.jar
+          cp -a server/Dockerfile build-server-container/
+      - name: Registry Login
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REPOSITORY_BASE }}
+          username: _json_key
+          password: ${{ secrets.GCP }}
+      - name: Build and Push Server Container
+        id: push
+        uses: docker/build-push-action@v2
+        with:
+          context: build-server-container
+          push: true
+          tags: ${{ env.REPOSITORY_BASE }}/server
+  build:
+    name: Publish Build
+    runs-on: ubuntu-latest
+    needs:
+      - frontend
+      - server
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install Kustomize
+        uses: engineerd/configurator@v0.0.8
+        with:
+          name: kustomize
+          url: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.4.0/kustomize_v4.4.0_linux_amd64.tar.gz
+          pathInArchive: kustomize
+      - name: Install Carvel Tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          only: kbld, imgpkg
+      - name: Create Build
+        env:
+          KBLD_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
+          KBLD_REGISTRY_USERNAME: _json_key
+          KBLD_REGISTRY_PASSWORD: ${{ secrets.GCP }}
+          IMGPKG_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
+          IMGPKG_REGISTRY_USERNAME: _json_key
+          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GCP }}
+        run: |
+          kustomize version
+          kbld version
+          imgpkg version
+          echo frontend digest: ${{ needs.frontend.outputs.digest }}
+          echo server digest: ${{ needs.server.outputs.digest }}
+
+          build_dir=$(mktemp -d)
+          for environment in $(find deployment/environments -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+          do
+            mkdir "$build_dir"/"$environment"
+            kustomize build deployment/environments/"$environment" | kbld -f - > "$build_dir"/"$environment"/resources.yaml
+          done
+
+          mkdir -p "$build_dir"/.imgpkg
+          cat "$build_dir"/*.yml | kbld -f - --imgpkg-lock-output "$build_dir"/.imgpkg/images.yml
+          imgpkg push -b "${{ env.REPOSITORY_BASE }}"/build -f "$build_dir"
+  gcs-test:
+    runs-on: ubuntu-latest
+    name: GCS Test
+    steps:
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: tools-275701
+          service_account_key: ${{ secrets.GCP }}
+          export_default_credentials: true
+      - name: Test
+        run: |
+          version_dir=$(mktemp -d)
+          echo perform check:
+          if gsutil stat gs://version-twocan/build; then
+            gsutil cp gs://version-twocan/build "$version_dir"
+          else
+            echo 1 > "$version_dir"/build
+          fi
+
+          echo version is $(cat "$version_dir"/build)
+          gsutil cp "$version_dir"/build gs://version-twocan
+  microk8s:
+    runs-on: ubuntu-latest
+    name: MicroK8s
+    steps:
+      - name: Setup MicroK8s
+        uses: balchua/microk8s-actions@v0.2.2
+        with:
+          channel: 1.21/stable
+          addons: '["dns", "ingress"]'
+      - name: Test MicroK8s
+        run: |
+          kubectl get no
+          kubectl get pods -A -o wide
