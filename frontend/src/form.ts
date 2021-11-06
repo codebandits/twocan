@@ -95,7 +95,6 @@ export const useFormData = <Values extends ValuesType>(config: Config<Values>): 
                             FormHelperTextProps: {
                                 'data-testid': `${key}-helper-text`,
                             },
-                            disabled: submitting,
                             error: errors[key] !== undefined,
                             helperText: errors[key] || '\u200b',
                             value: value,
