@@ -1,7 +1,8 @@
 import {DrawerLayout} from "./layout/drawer";
 import {Route, Routes} from "react-router-dom";
-import {HomePage, InboxPage, MailPage} from "./sample-pages";
+import {InboxPage, MailPage} from "./sample-pages";
 import React from "react";
+import {HomePage} from "./home/home-page";
 
 export const AppRoutes = () => (
     <Routes>

@@ -2,14 +2,6 @@ import {Typography} from "@mui/material";
 import React from "react";
 import {Page} from "./layout/page";
 
-export const HomePage = () => (
-    <Page title="Twocan">
-        <Typography>
-            Time to Twocan
-        </Typography>
-    </Page>
-)
-
 export const MailPage = () => (
     <Page title="Mail">
         <Typography paragraph>Some mail for you...</Typography>

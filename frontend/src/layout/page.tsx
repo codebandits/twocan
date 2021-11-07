@@ -25,7 +25,7 @@ export const Page = ({title, children}: Props) => {
                     <Typography variant="h6" noWrap component="div">{title}</Typography>
                 </Toolbar>
             </AppBar>
-            <Box component="main" sx={{p: 3}}>
+            <Box component="main">
                 <Toolbar/>
                 {children}
             </Box>
