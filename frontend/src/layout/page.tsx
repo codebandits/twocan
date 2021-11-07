@@ -1,4 +1,4 @@
-import {useDrawerToggle} from "./drawer";
+import {useDrawerOnToggle} from "./drawer";
 import {AppBar, Box, IconButton, Toolbar, Typography} from "@mui/material";
 import MenuIcon from "@mui/icons-material/Menu";
 import React from "react";
@@ -9,7 +9,7 @@ type Props = {
 }
 
 export const Page = ({title, children}: Props) => {
-    const drawerToggle = useDrawerToggle()
+    const drawerToggle = useDrawerOnToggle()
     return (
         <Box>
             <AppBar position="fixed" sx={{zIndex: (theme) => theme.zIndex.drawer + 1}}>

@@ -20,15 +20,14 @@ export const DrawerLayout = () => (
 
 const ResponsiveDrawer = () => {
     const drawerOpen = useDrawerOpen()
-    const drawerToggle = useDrawerToggle()
+    const drawerOnClose = useDrawerOnClose()
     return (
         <>
             <Hidden mdUp>
                 <Drawer
                     variant="temporary"
                     open={drawerOpen}
-                    onClose={drawerToggle}
-                    onClick={drawerToggle}
+                    onClose={drawerOnClose}
                     ModalProps={{keepMounted: true}}
                     sx={{'& .MuiDrawer-paper': {boxSizing: 'border-box', width: drawerWidth}}}>
                     <DrawerList/>
@@ -52,48 +51,53 @@ const ResponsiveDrawer = () => {
 }
 
 // TODO: simplify when resolved https://git.io/JXtUb
-const DrawerList = () => (
-    <>
-        <Toolbar/>
-        <Divider/>
-        <List>
-            <ListItemButton href="/" component={LinkComponent}>
-                <ListItemIcon>
-                    <HomeIcon/>
-                </ListItemIcon>
-                <ListItemText primary="Home"/>
-            </ListItemButton>
-        </List>
-        <Divider/>
-        <List>
-            <ListItemButton href="/mail" component={LinkComponent}>
-                <ListItemIcon>
-                    <MailIcon/>
-                </ListItemIcon>
-                <ListItemText primary="Mail"/>
-            </ListItemButton>
-            <ListItemButton href="/inbox" component={LinkComponent}>
-                <ListItemIcon>
-                    <InboxIcon/>
-                </ListItemIcon>
-                <ListItemText primary="Inbox"/>
-            </ListItemButton>
-        </List>
-    </>
-)
+const DrawerList = () => {
+    const drawerOnClose = useDrawerOnClose()
+    return (
+        <>
+            <Toolbar/>
+            <Divider/>
+            <List onClick={drawerOnClose}>
+                <ListItemButton href="/" component={LinkComponent}>
+                    <ListItemIcon>
+                        <HomeIcon/>
+                    </ListItemIcon>
+                    <ListItemText primary="Home"/>
+                </ListItemButton>
+            </List>
+            <Divider/>
+            <List onClick={drawerOnClose}>
+                <ListItemButton href="/mail" component={LinkComponent}>
+                    <ListItemIcon>
+                        <MailIcon/>
+                    </ListItemIcon>
+                    <ListItemText primary="Mail"/>
+                </ListItemButton>
+                <ListItemButton href="/inbox" component={LinkComponent}>
+                    <ListItemIcon>
+                        <InboxIcon/>
+                    </ListItemIcon>
+                    <ListItemText primary="Inbox"/>
+                </ListItemButton>
+            </List>
+        </>
+    )
+}
 
 type Context = {
     open: boolean
-    toggle: () => void
+    onToggle: () => void
+    onClose: () => void
 }
 
 const DrawerContext = createContext<Context | null>(null)
 
 export const DrawerProvider: React.FC = ({children}) => {
     const [open, setOpen] = useState(false)
-    const toggle = () => setOpen(value => !value)
+    const onToggle = () => setOpen(value => !value)
+    const onClose = () => setOpen(false)
     return (
-        <DrawerContext.Provider value={{open, toggle}}>
+        <DrawerContext.Provider value={{open, onToggle, onClose}}>
             {children}
         </DrawerContext.Provider>
     )
@@ -107,10 +111,18 @@ export const useDrawerOpen = () => {
     return context.open
 }
 
-export const useDrawerToggle = () => {
+export const useDrawerOnToggle = () => {
     const context = useContext(DrawerContext)
     if (context === null) {
         throw new Error('useDrawerToggle must be used within its context provider')
     }
-    return context.toggle
+    return context.onToggle
+}
+
+export const useDrawerOnClose = () => {
+    const context = useContext(DrawerContext)
+    if (context === null) {
+        throw new Error('useDrawerClose must be used within its context provider')
+    }
+    return context.onClose
 }
