@@ -1,11 +1,11 @@
-import {Typography} from "@mui/material";
-import React from "react";
-import {Page} from "./layout/page";
+import {Typography} from '@mui/material'
+import React from 'react'
+import {Page} from './layout/page'
 
 export const MailPage = () => (
-    <Page title="Mail">
-        <Typography paragraph>Some mail for you...</Typography>
-        <Typography paragraph>
+  <Page title="Mail">
+    <Typography paragraph>Some mail for you...</Typography>
+    <Typography paragraph>
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
             tempor incididunt ut labore et dolore magna aliqua. Rhoncus dolor purus non
             enim praesent elementum facilisis leo vel. Risus at ultrices mi tempus
@@ -18,8 +18,8 @@ export const MailPage = () => (
             feugiat vivamus at augue. At augue eget arcu dictum varius duis at
             consectetur lorem. Velit sed ullamcorper morbi tincidunt. Lorem donec massa
             sapien faucibus et molestie ac.
-        </Typography>
-        <Typography paragraph>
+    </Typography>
+    <Typography paragraph>
             Consequat mauris nunc congue nisi vitae suscipit. Fringilla est ullamcorper
             eget nulla facilisi etiam dignissim diam. Pulvinar elementum integer enim
             neque volutpat ac tincidunt. Ornare suspendisse sed nisi lacus sed viverra
@@ -31,12 +31,12 @@ export const MailPage = () => (
             tristique sollicitudin nibh sit. Ornare aenean euismod elementum nisi quis
             eleifend. Commodo viverra maecenas accumsan lacus vel facilisis. Nulla
             posuere sollicitudin aliquam ultrices sagittis orci a.
-        </Typography>
-    </Page>
+    </Typography>
+  </Page>
 )
 
 export const InboxPage = () => (
-    <Page title="Inbox">
-        <Typography>Your inbox is empty.</Typography>
-    </Page>
+  <Page title="Inbox">
+    <Typography>Your inbox is empty.</Typography>
+  </Page>
 )
