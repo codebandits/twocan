@@ -1,0 +1,26 @@
+{
+    "env": {
+        "browser": true,
+        "es2021": true
+    },
+    "extends": [
+        "plugin:testcafe/recommended"
+    ],
+    "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+        "ecmaVersion": 13,
+        "sourceType": "module"
+    },
+    "plugins": [
+        "@typescript-eslint", "testcafe"
+    ],
+    "rules": {
+        "semi": ["warn", "never"],
+        "quotes": ["warn", "single"],
+        "indent": ["warn", 2],
+        "eol-last": ["warn", "always"],
+        "array-bracket-spacing": ["warn", "never"],
+        "object-curly-spacing": ["warn", "never"],
+        "no-multiple-empty-lines": ["warn", {"max": 2, "maxEOF": 0}]
+    }
+}
