@@ -3,13 +3,70 @@ on:
   push:
   workflow_dispatch:
 jobs:
-  e2e:
-    name: End to End Test
+  frontend:
+    name: Build frontend
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
-      - name: Run tests
-        uses: DevExpress/testcafe-action@latest
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.4.1
         with:
-          args: "chrome e2e/tests"
+          node-version: 15.x
+          check-latest: true
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm install
+      - name: Run tests
+        working-directory: frontend
+        run: npm test
+      - name: Build
+        working-directory: frontend
+        run: npm run build
+      - name: Save the build folder
+        uses: actions/upload-artifact@v2
+        with:
+          name: frontend-build
+          if-no-files-found: error
+          path: frontend/build
+  e2e:
+    name: End to End Tests
+    runs-on: ubuntu-latest
+    container: cypress/browsers:node14.17.0-chrome88-ff89
+    needs:
+      - frontend
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Download the build folders
+        uses: actions/download-artifact@v2
+        with:
+          name: frontend-build
+          path: frontend/build
+      - name: Run frontend
+        working-directory: frontend
+        run: npm start &
+      - name: Run tests on Chrome desktop
+        uses: cypress-io/github-action@v2
+        env:
+          CYPRESS_BASE_URL: http://localhost:3000
+        with:
+          working-directory: e2e
+          wait-on: http://localhost:3000
+          wait-on-timeout: 30
+          browser: chrome
+          spec: cypress/integration/*
+      - name: Run tests on Chrome mobile
+        uses: cypress-io/github-action@v2
+        with:
+          working-directory: e2e
+          wait-on: http://localhost:3000
+          wait-on-timeout: 30
+          browser: chrome
+          config: |
+            baseUrl=http://localhost:3000
+            viewportWidth=375
+            viewportHeight=667
+          spec: cypress/integration/*

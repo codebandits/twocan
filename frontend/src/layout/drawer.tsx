@@ -106,7 +106,7 @@ export const DrawerProvider: React.FC = ({children}) => {
 export const useDrawerOpen = () => {
   const context = useContext(DrawerContext)
   if (context === null) {
-    throw new Error('useDrawerOpen must be used within its context provider')
+    return false
   }
   return context.open
 }
@@ -114,7 +114,7 @@ export const useDrawerOpen = () => {
 export const useDrawerOnToggle = () => {
   const context = useContext(DrawerContext)
   if (context === null) {
-    throw new Error('useDrawerToggle must be used within its context provider')
+    return () => undefined
   }
   return context.onToggle
 }
@@ -122,7 +122,7 @@ export const useDrawerOnToggle = () => {
 export const useDrawerOnClose = () => {
   const context = useContext(DrawerContext)
   if (context === null) {
-    throw new Error('useDrawerClose must be used within its context provider')
+    return () => undefined
   }
   return context.onClose
 }
