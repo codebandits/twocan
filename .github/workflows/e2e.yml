@@ -2,10 +2,58 @@ name: End-to-End Test
 on:
   push:
   workflow_dispatch:
+env:
+  REGISTRY: us-central1-docker.pkg.dev
+  GCP_PROJECT: distribrewtion-201323
+  REPOSITORY_BASE: us-central1-docker.pkg.dev/distribrewtion-201323/twocan
 jobs:
-  frontend:
-    name: Build frontend
+  version:
+    name: Version
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+          service_account_key: ${{ secrets.GCP_KEY }}
+          export_default_credentials: true
+      - name: Increment version
+        id: version
+        env:
+          bucket: build-versions
+          name: twocan
+        run: |
+          set -euo pipefail
+          bucket=${{ env.bucket }}
+          name=${{ env.name }}
+          version_dir=$(mktemp -d)
+
+          echo ::group::Fetching existing version
+          if gsutil stat gs://$bucket/$name; then
+            gsutil cp gs://$bucket/$name $version_dir
+          else
+            echo 0 > $version_dir/$name
+          fi
+          echo ::endgroup::
+
+          version=$(cat $version_dir/$name | xargs expr 1 +)
+          echo New version is $version
+
+          echo ::group::Storing new version
+          echo $version > $version_dir/$name
+          gsutil -h Content-Type:text/plain cp $version_dir/$name gs://$bucket
+          echo ::endgroup::
+
+          echo ::set-output name=version::$version
+  frontend:
+    name: Frontend
+    runs-on: ubuntu-latest
+    needs:
+      - version
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -25,48 +73,197 @@ jobs:
       - name: Build
         working-directory: frontend
         run: npm run build
-      - name: Save the build folder
-        uses: actions/upload-artifact@v2
+      - name: Prepare Container Artiacts
+        run: |
+          mkdir build-frontend-container
+          cp -a frontend/build build-frontend-container/build
+          cp -a frontend/Dockerfile build-frontend-container/
+          cp -a frontend/nginx.conf build-frontend-container/
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Registry Login
+        uses: docker/login-action@v1
         with:
-          name: frontend-build
-          if-no-files-found: error
-          path: frontend/build
+          registry: ${{ env.REGISTRY }}
+          username: _json_key
+          password: ${{ secrets.GCP_KEY }}
+      - name: Build and Push Frontend Container
+        id: push
+        uses: docker/build-push-action@v2
+        with:
+          context: build-frontend-container
+          push: true
+          tags: ${{ env.REPOSITORY_BASE }}/frontend:v${{ needs.version.outputs.version }}
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+    needs:
+      - version
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Setup Java environment
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: 11
+          check-latest: true
+          cache: gradle
+      - name: Run tests
+        run: ./gradlew test
+      - name: Build
+        run: ./gradlew :server:shadowJar
+      - name: Prepare Container Artiacts
+        run: |
+          mkdir build-server-container
+          cp -a server/build/libs/twocan.server.jar build-server-container/app.jar
+          cp -a server/Dockerfile build-server-container/
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Registry Login
+        uses: docker/login-action@v1
+        with:
+          registry: ${{ env.REPOSITORY_BASE }}
+          username: _json_key
+          password: ${{ secrets.GCP_KEY }}
+      - name: Build and Push Server Container
+        id: push
+        uses: docker/build-push-action@v2
+        with:
+          context: build-server-container
+          push: true
+          tags: ${{ env.REPOSITORY_BASE }}/server:v${{ needs.version.outputs.version }}
+  build:
+    name: Publish Build
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - frontend
+      - server
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Unlock secrets
+        uses: sliteteam/github-action-git-crypt-unlock@1.2.0
+        env:
+          GIT_CRYPT_KEY: ${{ secrets.GIT_CRYPT_KEY }}
+      - name: Install Kustomize
+        uses: engineerd/configurator@v0.0.8
+        with:
+          name: kustomize
+          url: https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v4.4.0/kustomize_v4.4.0_linux_amd64.tar.gz
+          pathInArchive: kustomize
+      - name: Install Carvel Tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          only: kbld, imgpkg
+      - name: Create Build
+        env:
+          KBLD_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
+          KBLD_REGISTRY_USERNAME: _json_key
+          KBLD_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
+          IMGPKG_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
+          IMGPKG_REGISTRY_USERNAME: _json_key
+          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
+        run: |
+          set -euo pipefail
+          version=${{ needs.version.outputs.version }}
+          frontend_digest=${{ needs.frontend.outputs.digest }}
+          frontend_image=${{ env.REPOSITORY_BASE }}/frontend@$frontend_digest
+          server_digest=${{ needs.server.outputs.digest }}
+          server_image=${{ env.REPOSITORY_BASE }}/server@$server_digest
+          mapping_dir=$(mktemp -d)
+          build_dir=$(mktemp -d)
+
+          jq -n \
+            --arg frontend_image $frontend_image \
+            --arg server_image $server_image \
+            '{"twocan/frontend": $frontend_image, "twocan/server": $server_image}' \
+            > $mapping_dir/relocation-mapping.json
+          for environment in $(find deployment/environments -mindepth 1 -maxdepth 1 -type d -exec basename {} \;)
+          do
+            kustomize build deployment/environments/"$environment" \
+              | kbld --image-map-file $mapping_dir/relocation-mapping.json -f - > "$build_dir"/"$environment".yml
+          done
+
+          mkdir -p "$build_dir"/.imgpkg
+          cat "$build_dir"/*.yml | kbld -f - --imgpkg-lock-output "$build_dir"/.imgpkg/images.yml  > /dev/null
+          imgpkg push -b "${{ env.REPOSITORY_BASE }}"/build:v"$version" -f "$build_dir"
+  deploy-e2e:
+    name: Deploy E2E
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - build
+    steps:
+      - name: Install Carvel Tools
+        uses: vmware-tanzu/carvel-setup-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          only: imgpkg, kapp
+      - name: Set up gcloud Cloud SDK environment
+        uses: google-github-actions/setup-gcloud@v0.2.0
+        with:
+          project_id: ${{ env.GCP_PROJECT }}
+          service_account_key: ${{ secrets.GCP_KEY }}
+          export_default_credentials: true
+      - name: Deploy
+        env:
+          app: twocan
+          environment: e2e
+          region: us-central1
+          cluster: farfalle
+          KBLD_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
+          KBLD_REGISTRY_USERNAME: _json_key
+          KBLD_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
+          IMGPKG_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
+          IMGPKG_REGISTRY_USERNAME: _json_key
+          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
+        run: |
+          set -euo pipefail
+          app=${{ env.app }}
+          environment=${{ env.environment }}
+          region=${{ env.region }}
+          cluster=${{ env.cluster }}
+          version=${{ needs.version.outputs.version }}
+          gcloud container clusters get-credentials --region $region $cluster
+          imgpkg pull -b "${{ env.REPOSITORY_BASE }}"/build:v"$version" -o build
+          kapp deploy \
+            --namespace apps \
+            --app $app-$environment \
+            --yes \
+            -f build/$environment.yml
   e2e:
     name: End to End Tests
     runs-on: ubuntu-latest
     container: cypress/browsers:node14.17.0-chrome88-ff89
     needs:
-      - frontend
+      - deploy-e2e
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
-      - name: Download the build folders
-        uses: actions/download-artifact@v2
-        with:
-          name: frontend-build
-          path: frontend/build
-      - name: Run frontend
-        working-directory: frontend
-        run: npm start &
       - name: Run tests on Chrome desktop
         uses: cypress-io/github-action@v2
-        env:
-          CYPRESS_BASE_URL: http://localhost:3000
         with:
           working-directory: e2e
-          wait-on: http://localhost:3000
+          wait-on: https://e2e.twocan.io
           wait-on-timeout: 30
           browser: chrome
           spec: cypress/integration/*
+          config: |
+            baseUrl=https://e2e.twocan.io
       - name: Run tests on Chrome mobile
         uses: cypress-io/github-action@v2
         with:
           working-directory: e2e
-          wait-on: http://localhost:3000
+          wait-on: https://e2e.twocan.io
           wait-on-timeout: 30
           browser: chrome
+          spec: cypress/integration/*
           config: |
-            baseUrl=http://localhost:3000
+            baseUrl=https://e2e.twocan.io
             viewportWidth=375
             viewportHeight=667
-          spec: cypress/integration/*

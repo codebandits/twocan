@@ -1,0 +1,7 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: twocan-e2e
+  annotations:
+    kapp.k14s.io/delete-strategy: orphan

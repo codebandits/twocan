@@ -17,10 +17,18 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: us-central1-docker.pkg.dev/tools-275701/twocan/frontend
+          image: twocan/frontend
+          resources:
+            requests:
+              memory: 128Mi
+              cpu: 0.2
+            limits:
+              memory: 528Mi
+              cpu: 1
           ports:
             - containerPort: 80
           readinessProbe:
+            failureThreshold: 10
             httpGet:
               path: /status
               port: 8080

@@ -10,7 +10,7 @@ buildscript {
     dependencies {
         classpath(kotlin("gradle-plugin", version = Versions.Kotlin))
         classpath(kotlin("serialization", version = Versions.Kotlin))
-        classpath("gradle.plugin.com.github.jengelman.gradle.plugins:shadow:${Versions.Shadow}")
+        classpath("gradle.plugin.com.github.johnrengelman:shadow:${Versions.Shadow}")
     }
 }
 
