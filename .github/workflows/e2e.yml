@@ -3,12 +3,11 @@ on:
   push:
   workflow_dispatch:
 env:
-  REGISTRY: us-central1-docker.pkg.dev
   GCP_PROJECT: distribrewtion-201323
-  REPOSITORY_BASE: us-central1-docker.pkg.dev/distribrewtion-201323/twocan
+  REGISTRY: us-central1-docker.pkg.dev/distribrewtion-201323/twocan
 jobs:
   version:
-    name: Version
+    name: Create Version
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -25,12 +24,14 @@ jobs:
           bucket: build-versions
           name: twocan
         run: |
+          echo ::group::Setup environment
           set -euo pipefail
           bucket=${{ env.bucket }}
           name=${{ env.name }}
           version_dir=$(mktemp -d)
+          echo ::endgroup::
 
-          echo ::group::Fetching existing version
+          echo ::group::Fetch existing version
           if gsutil stat gs://$bucket/$name; then
             gsutil cp gs://$bucket/$name $version_dir
           else
@@ -41,7 +42,7 @@ jobs:
           version=$(cat $version_dir/$name | xargs expr 1 +)
           echo New version is $version
 
-          echo ::group::Storing new version
+          echo ::group::Store new version
           echo $version > $version_dir/$name
           gsutil -h Content-Type:text/plain cp $version_dir/$name gs://$bucket
           echo ::endgroup::
@@ -83,10 +84,10 @@ jobs:
         uses: ./.github/actions/build-push
         id: push
         with:
-          registry: ${{ env.REPOSITORY_BASE }}
+          registry: ${{ env.REGISTRY }}
+          image: frontend
           username: _json_key
           password: ${{ secrets.GCP_KEY }}
-          name: frontend
           context: build-frontend-container
           version: ${{ needs.version.outputs.version }}
   server:
@@ -119,10 +120,10 @@ jobs:
         uses: ./.github/actions/build-push
         id: push
         with:
-          registry: ${{ env.REPOSITORY_BASE }}
+          registry: ${{ env.REGISTRY }}
+          image: server
           username: _json_key
           password: ${{ secrets.GCP_KEY }}
-          name: server
           context: build-server-container
           version: ${{ needs.version.outputs.version }}
   build:
@@ -162,9 +163,9 @@ jobs:
           set -euo pipefail
           version=${{ needs.version.outputs.version }}
           frontend_digest=${{ needs.frontend.outputs.digest }}
-          frontend_image=${{ env.REPOSITORY_BASE }}/frontend@$frontend_digest
+          frontend_image=${{ env.REGISTRY }}/frontend@$frontend_digest
           server_digest=${{ needs.server.outputs.digest }}
-          server_image=${{ env.REPOSITORY_BASE }}/server@$server_digest
+          server_image=${{ env.REGISTRY }}/server@$server_digest
           mapping_dir=$(mktemp -d)
           build_dir=$(mktemp -d)
 
@@ -181,7 +182,7 @@ jobs:
 
           mkdir -p "$build_dir"/.imgpkg
           cat "$build_dir"/*.yml | kbld -f - --imgpkg-lock-output "$build_dir"/.imgpkg/images.yml  > /dev/null
-          imgpkg push -b "${{ env.REPOSITORY_BASE }}"/build:v"$version" -f "$build_dir"
+          imgpkg push -b "${{ env.REGISTRY }}"/build:v"$version" -f "$build_dir"
   deploy-e2e:
     name: Deploy E2E
     runs-on: ubuntu-latest
@@ -189,43 +190,23 @@ jobs:
       - version
       - build
     steps:
-      - name: Install Carvel Tools
-        uses: vmware-tanzu/carvel-setup-action@v1
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Deploy E2E
+        uses: ./.github/actions/deploy-build
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          only: imgpkg, kapp
-      - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v0.2.0
-        with:
-          project_id: ${{ env.GCP_PROJECT }}
-          service_account_key: ${{ secrets.GCP_KEY }}
-          export_default_credentials: true
-      - name: Deploy
-        env:
           app: twocan
           environment: e2e
-          region: us-central1
+          version: ${{ needs.version.outputs.version }}
+          registry: ${{ env.REGISTRY }}
+          image: build
+          username: _json_key
+          password: ${{ secrets.GCP_KEY }}
           cluster: farfalle
-          KBLD_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
-          KBLD_REGISTRY_USERNAME: _json_key
-          KBLD_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
-          IMGPKG_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
-          IMGPKG_REGISTRY_USERNAME: _json_key
-          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
-        run: |
-          set -euo pipefail
-          app=${{ env.app }}
-          environment=${{ env.environment }}
-          region=${{ env.region }}
-          cluster=${{ env.cluster }}
-          version=${{ needs.version.outputs.version }}
-          gcloud container clusters get-credentials --region $region $cluster
-          imgpkg pull -b "${{ env.REPOSITORY_BASE }}"/build:v"$version" -o build
-          kapp deploy \
-            --namespace apps \
-            --app $app-$environment \
-            --yes \
-            -f build/$environment.yml
+          gcp_project: ${{ env.GCP_PROJECT }}
+          gcp_service_account_key: ${{ secrets.GCP_KEY }}
+          gcp_region: us-central1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
   e2e:
     name: End to End Tests
     runs-on: ubuntu-latest

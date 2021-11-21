@@ -4,14 +4,14 @@ inputs:
   registry:
     description: The registry where the image will be pushed.
     required: true
+  image:
+    description: The name of the image in the registry.
+    required: true
   username:
     description: The username used to authenticate with the registry.
     required: true
   password:
     description: The password used to authenticate with the registry.
-    required: true
-  name:
-    description: The name of the image in the registry.
     required: true
   version:
     description: The version used to tag the image.
@@ -40,4 +40,4 @@ runs:
       with:
         context: ${{ inputs.context }}
         push: true
-        tags: ${{ inputs.registry }}/${{ inputs.name }}:v${{ inputs.version }}
+        tags: ${{ inputs.registry }}/${{ inputs.image }}:v${{ inputs.version }}
