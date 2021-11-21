@@ -79,21 +79,16 @@ jobs:
           cp -a frontend/build build-frontend-container/build
           cp -a frontend/Dockerfile build-frontend-container/
           cp -a frontend/nginx.conf build-frontend-container/
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Registry Login
-        uses: docker/login-action@v1
+      - name: Build and Push Frontend Container
+        uses: ./.github/actions/build-push
+        id: push
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.REPOSITORY_BASE }}
           username: _json_key
           password: ${{ secrets.GCP_KEY }}
-      - name: Build and Push Frontend Container
-        id: push
-        uses: docker/build-push-action@v2
-        with:
+          name: frontend
           context: build-frontend-container
-          push: true
-          tags: ${{ env.REPOSITORY_BASE }}/frontend:v${{ needs.version.outputs.version }}
+          version: ${{ needs.version.outputs.version }}
   server:
     name: Server
     runs-on: ubuntu-latest
@@ -120,21 +115,16 @@ jobs:
           mkdir build-server-container
           cp -a server/build/libs/twocan.server.jar build-server-container/app.jar
           cp -a server/Dockerfile build-server-container/
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-      - name: Registry Login
-        uses: docker/login-action@v1
+      - name: Build and Push Server Container
+        uses: ./.github/actions/build-push
+        id: push
         with:
           registry: ${{ env.REPOSITORY_BASE }}
           username: _json_key
           password: ${{ secrets.GCP_KEY }}
-      - name: Build and Push Server Container
-        id: push
-        uses: docker/build-push-action@v2
-        with:
+          name: server
           context: build-server-container
-          push: true
-          tags: ${{ env.REPOSITORY_BASE }}/server:v${{ needs.version.outputs.version }}
+          version: ${{ needs.version.outputs.version }}
   build:
     name: Publish Build
     runs-on: ubuntu-latest
