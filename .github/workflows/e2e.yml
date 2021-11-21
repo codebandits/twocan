@@ -5,6 +5,8 @@ on:
 env:
   GCP_PROJECT: distribrewtion-201323
   REGISTRY: us-central1-docker.pkg.dev/distribrewtion-201323/twocan
+  REGISTRY_USERNAME: _json_key
+  REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
 jobs:
   version:
     name: Create Version
@@ -60,8 +62,8 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: frontend
-          username: _json_key
-          password: ${{ secrets.GCP_KEY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
           context: build-frontend-container
           version: ${{ needs.version.outputs.version }}
   server:
@@ -96,8 +98,8 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           image: server
-          username: _json_key
-          password: ${{ secrets.GCP_KEY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
           context: build-server-container
           version: ${{ needs.version.outputs.version }}
   build:
@@ -128,11 +130,11 @@ jobs:
       - name: Create Build
         env:
           KBLD_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
-          KBLD_REGISTRY_USERNAME: _json_key
-          KBLD_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
+          KBLD_REGISTRY_USERNAME: ${{ env.REGISTRY_USERNAME }}
+          KBLD_REGISTRY_PASSWORD: ${{ env.REGISTRY_PASSWORD }}
           IMGPKG_REGISTRY_HOSTNAME: ${{ env.REGISTRY }}
-          IMGPKG_REGISTRY_USERNAME: _json_key
-          IMGPKG_REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
+          IMGPKG_REGISTRY_USERNAME: ${{ env.REGISTRY_USERNAME }}
+          IMGPKG_REGISTRY_PASSWORD: ${{ env.REGISTRY_PASSWORD }}
         run: |
           set -euo pipefail
           version=${{ needs.version.outputs.version }}
@@ -174,8 +176,8 @@ jobs:
           version: ${{ needs.version.outputs.version }}
           registry: ${{ env.REGISTRY }}
           image: build
-          username: _json_key
-          password: ${{ secrets.GCP_KEY }}
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
           cluster: farfalle
           gcp_project: ${{ env.GCP_PROJECT }}
           gcp_service_account_key: ${{ secrets.GCP_KEY }}
