@@ -12,42 +12,16 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version }}
     steps:
-      - name: Set up gcloud Cloud SDK environment
-        uses: google-github-actions/setup-gcloud@v0.2.0
-        with:
-          project_id: ${{ env.GCP_PROJECT }}
-          service_account_key: ${{ secrets.GCP_KEY }}
-          export_default_credentials: true
-      - name: Increment version
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Create Version
+        uses: ./.github/actions/create-version
         id: version
-        env:
+        with:
           bucket: build-versions
           name: twocan
-        run: |
-          echo ::group::Setup environment
-          set -euo pipefail
-          bucket=${{ env.bucket }}
-          name=${{ env.name }}
-          version_dir=$(mktemp -d)
-          echo ::endgroup::
-
-          echo ::group::Fetch existing version
-          if gsutil stat gs://$bucket/$name; then
-            gsutil cp gs://$bucket/$name $version_dir
-          else
-            echo 0 > $version_dir/$name
-          fi
-          echo ::endgroup::
-
-          version=$(cat $version_dir/$name | xargs expr 1 +)
-          echo New version is $version
-
-          echo ::group::Store new version
-          echo $version > $version_dir/$name
-          gsutil -h Content-Type:text/plain cp $version_dir/$name gs://$bucket
-          echo ::endgroup::
-
-          echo ::set-output name=version::$version
+          gcp_project: ${{ env.GCP_PROJECT }}
+          gcp_service_account_key: ${{ secrets.GCP_KEY }}
   frontend:
     name: Frontend
     runs-on: ubuntu-latest
