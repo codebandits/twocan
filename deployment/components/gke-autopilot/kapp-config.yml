@@ -1,0 +1,18 @@
+# This configuration exists to work around an issue in GKE Autopilot
+# https://kubernetes.slack.com/archives/CH8KCCKA5/p1637687717485700?thread_ts=1637622947.475700&cid=CH8KCCKA5
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kapp-config
+  labels:
+    kapp.k14s.io/config: ""
+data:
+  config.yml: |
+    apiVersion: kapp.k14s.io/v1alpha1
+    kind: Config
+    rebaseRules:
+    - type: copy
+      sources: [new, existing]
+      path: [spec, template, spec, securityContext]
+      resourceMatchers:
+      - apiVersionKindMatcher: {apiVersion: apps/v1, kind: Deployment}
