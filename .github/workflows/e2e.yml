@@ -183,6 +183,30 @@ jobs:
           gcp_service_account_key: ${{ secrets.GCP_KEY }}
           gcp_region: us-central1
           github_token: ${{ secrets.GITHUB_TOKEN }}
+  deploy-acceptance:
+    name: Deploy Acceptance
+    runs-on: ubuntu-latest
+    needs:
+      - version
+      - build
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Deploy E2E
+        uses: ./.github/actions/deploy-build
+        with:
+          app: twocan
+          environment: acceptance
+          version: ${{ needs.version.outputs.version }}
+          registry: ${{ env.REGISTRY }}
+          image: build
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+          cluster: torrio
+          gcp_project: ${{ env.GCP_PROJECT }}
+          gcp_service_account_key: ${{ secrets.GCP_KEY }}
+          gcp_region: us-central1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
   e2e:
     name: End to End Tests
     runs-on: ubuntu-latest
