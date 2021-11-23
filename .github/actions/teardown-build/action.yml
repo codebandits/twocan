@@ -1,26 +1,11 @@
-name: Deploy Build
-description: Deploys a build in a standard fashion.
+name: Teardown Build
+description: Delete a deployed build in a standard fashion.
 inputs:
   app:
     description: The name of the app.
     required: true
   environment:
-    description: The environment defined within the build to deploy.
-    required: true
-  version:
-    description: The version to deploy.
-    required: true
-  registry:
-    description: The registry where the build image is stored.
-    required: true
-  image:
-    description: The name of the build image to be deployed.
-    required: true
-  username:
-    description: The username used to authenticate with the registry.
-    required: true
-  password:
-    description: The password used to authenticate with the registry.
+    description: The environment defined within the build to teardown.
     required: true
   cluster:
     description: The k8s cluster name of the deployment.
@@ -51,11 +36,7 @@ runs:
         project_id: ${{ inputs.gcp_project }}
         service_account_key: ${{ inputs.gcp_service_account_key }}
         export_default_credentials: true
-    - name: Deploy
-      env:
-        IMGPKG_REGISTRY_HOSTNAME: ${{ inputs.registry }}
-        IMGPKG_REGISTRY_USERNAME: ${{ inputs.username }}
-        IMGPKG_REGISTRY_PASSWORD: ${{ inputs.password }}
+    - name: Teardown
       shell: bash
       run: |
         echo ::group::Setup environment
@@ -64,25 +45,15 @@ runs:
         environment=${{ inputs.environment }}
         region=${{ inputs.gcp_region }}
         cluster=${{ inputs.cluster }}
-        version=${{ inputs.version }}
-        registry=${{ inputs.registry }}
-        image=${{ inputs.image }}
         echo ::endgroup::
 
         echo ::group::Authenticate to GKE
         gcloud container clusters get-credentials --region $region $cluster
         echo ::endgroup::
 
-        echo ::group::Pull build
-        bundle=$registry/$image:v$version
-        echo Pulling $bundle
-        imgpkg pull -b $bundle -o build
-        echo ::endgroup::
-
-        echo ::group::Deploy app
-        kapp deploy \
+        echo ::group::Teardown app
+        kapp delete \
           --namespace apps \
           --app $app-$environment \
-          --yes \
-          -f build/$environment.yml
+          --yes
         echo ::endgroup::
