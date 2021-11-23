@@ -13,7 +13,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
-    concurrency: twocan-version
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -163,11 +162,9 @@ jobs:
   deploy-e2e:
     name: Deploy E2E
     runs-on: ubuntu-latest
-    environment: e2e
     needs:
       - version
       - build
-    concurrency: e2e-environment
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -192,7 +189,6 @@ jobs:
     container: cypress/browsers:node14.17.0-chrome88-ff89
     needs:
       - deploy-e2e
-    concurrency: e2e-environment
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -225,7 +221,6 @@ jobs:
       - deploy-e2e
       - e2e
     if: ${{ always() }}
-    concurrency: e2e-environment
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -242,12 +237,10 @@ jobs:
   deploy-acceptance:
     name: Deploy Acceptance
     runs-on: ubuntu-latest
-    environment: acceptance
     needs:
       - version
       - build
       - e2e
-    concurrency: acceptance-environment
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
@@ -274,7 +267,6 @@ jobs:
       - version
       - build
       - deploy-acceptance
-    concurrency: production-environment
     steps:
       - name: Check out the repository
         uses: actions/checkout@v2
