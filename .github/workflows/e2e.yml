@@ -202,7 +202,7 @@ jobs:
           image: build
           username: ${{ env.REGISTRY_USERNAME }}
           password: ${{ env.REGISTRY_PASSWORD }}
-          cluster: torrio
+          cluster: farfalle
           gcp_project: ${{ env.GCP_PROJECT }}
           gcp_service_account_key: ${{ secrets.GCP_KEY }}
           gcp_region: us-central1

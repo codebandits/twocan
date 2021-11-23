@@ -7,3 +7,4 @@ resources:
   - certificate.yml
   - ingress.yml
   - ../../components/twocan
+  - ../../components/gke-autopilot
