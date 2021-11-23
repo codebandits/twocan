@@ -162,6 +162,7 @@ jobs:
   deploy-e2e:
     name: Deploy E2E
     runs-on: ubuntu-latest
+    environment: e2e
     needs:
       - version
       - build
@@ -237,6 +238,7 @@ jobs:
   deploy-acceptance:
     name: Deploy Acceptance
     runs-on: ubuntu-latest
+    environment: acceptance
     needs:
       - version
       - build
@@ -249,6 +251,32 @@ jobs:
         with:
           app: twocan
           environment: acceptance
+          version: ${{ needs.version.outputs.version }}
+          registry: ${{ env.REGISTRY }}
+          image: build
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+          cluster: farfalle
+          gcp_project: ${{ env.GCP_PROJECT }}
+          gcp_service_account_key: ${{ secrets.GCP_KEY }}
+          gcp_region: us-central1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+  deploy-production:
+    name: Deploy Production
+    runs-on: ubuntu-latest
+    environment: production
+    needs:
+      - version
+      - build
+      - deploy-acceptance
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Deploy E2E
+        uses: ./.github/actions/deploy-build
+        with:
+          app: twocan
+          environment: production
           version: ${{ needs.version.outputs.version }}
           registry: ${{ env.REGISTRY }}
           image: build
