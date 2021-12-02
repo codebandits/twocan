@@ -1,7 +1,8 @@
-name: End-to-End Test
+name: CI
 on:
   push:
-  workflow_dispatch:
+    branches:
+      - main
 env:
   GCP_PROJECT: distribrewtion-201323
   REGISTRY: us-central1-docker.pkg.dev/distribrewtion-201323/twocan
