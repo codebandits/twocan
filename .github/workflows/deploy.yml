@@ -1,0 +1,43 @@
+name: Deploy
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: The version to deploy.
+        required: true
+      environment:
+        type: choice
+        description: The environment defined within the build to deploy.
+        required: true
+        options:
+          - e2e
+          - acceptance
+          - production
+env:
+  GCP_PROJECT: distribrewtion-201323
+  REGISTRY: us-central1-docker.pkg.dev/distribrewtion-201323/twocan
+  REGISTRY_USERNAME: _json_key
+  REGISTRY_PASSWORD: ${{ secrets.GCP_KEY }}
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v2
+      - name: Deploy E2E
+        uses: ./.github/actions/deploy-build
+        with:
+          app: twocan
+          environment: ${{ github.event.inputs.environment }}
+          version: ${{ github.event.inputs.version }}
+          registry: ${{ env.REGISTRY }}
+          image: build
+          username: ${{ env.REGISTRY_USERNAME }}
+          password: ${{ env.REGISTRY_PASSWORD }}
+          cluster: farfalle
+          gcp_project: ${{ env.GCP_PROJECT }}
+          gcp_service_account_key: ${{ secrets.GCP_KEY }}
+          gcp_region: us-central1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
