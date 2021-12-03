@@ -41,3 +41,4 @@ jobs:
           gcp_service_account_key: ${{ secrets.GCP_KEY }}
           gcp_region: us-central1
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          slack_webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}

@@ -37,6 +37,9 @@ inputs:
   github_token:
     description: Github token to use to avoid rate limits.
     required: true
+  slack_webhook_url:
+    description: The Slack webhook URL for notifications.
+    required: true
 runs:
   using: composite
   steps:
@@ -86,3 +89,11 @@ runs:
           --yes \
           -f build/$environment.yml
         echo ::endgroup::
+    - name: Slack
+      id: slack
+      uses: slackapi/slack-github-action@v1.16.0
+      with:
+        payload: |
+          {"message": "Build ${{ inputs.version }} deployed to ${{ inputs.environment }}."}
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
